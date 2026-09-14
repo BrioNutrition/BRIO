@@ -178,6 +178,8 @@ const nuage = (function(){
     if (/email not confirmed/i.test(brut))        return 'Ton e-mail n’est pas encore confirmé. Ouvre le lien qu’on t’a envoyé par e-mail.';
     if (/password/i.test(brut) && /short|least/i.test(brut)) return 'Mot de passe trop court : il en faut 8 caractères minimum.';
     if (/rate limit|too many/i.test(brut))        return 'Trop d’essais d’affilée. Attends une minute avant de réessayer.';
+    // panne du service d'envoi : la personne n'y peut rien, autant le dire ainsi
+    if (/sending|smtp|mailer/i.test(brut))        return 'L’e-mail n’a pas pu être envoyé. Ce n’est pas toi : le service d’envoi ne répond pas. Réessaie dans un moment.';
     return brut || 'Le serveur a refusé la demande (' + rep.status + ').';
   }
 
