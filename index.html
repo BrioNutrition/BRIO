@@ -62,6 +62,15 @@
    La clé ci-dessous est publique, et c'est prévu ainsi : ce sont les règles RLS
    de Supabase qui empêchent quelqu'un de lire les données d'un autre, pas le
    secret de la clé. La clé « service_role », elle, ne doit jamais venir ici. */
+/* Marque une erreur déjà rédigée pour être lue par quelqu'un : elle s'affichera
+   telle quelle. Les autres — celles du navigateur ou du serveur, en anglais —
+   passent en détail technique sous une phrase claire. Voir messageHumain(). */
+function erreurLisible(msg){
+  const e = new Error(msg);
+  e.lisible = true;
+  return e;
+}
+
 const NUAGE_URL = 'https://eebvykkxtukwctofheqn.supabase.co';
 const NUAGE_CLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlYnZ5a2t4dHVrd2N0b2ZoZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzODQyOTksImV4cCI6MjEwNDk2MDI5OX0.ubKPKXqdwzRgUm7DdM7O0SaSoklOT7eDT7FFgDAsNDc';
 
@@ -169,6 +178,13 @@ const nuage = (function(){
     ecrireJSON(CLE_SESSION, session);
   }
 
+  /* Le serveur répond en anglais. Rien de ce qu'il dit ne doit arriver tel quel
+     sous les yeux de quelqu'un : on traduit ce qu'on sait traduire, et le reste
+     est relégué en petit, comme détail technique, sous une phrase claire. */
+  const petitDetail = brut => brut
+    ? '<br><small>Détail technique : ' + String(brut).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').slice(0, 160) + '</small>'
+    : '';
+
   async function messageErreur(rep){
     let d = {};
     try { d = await rep.json(); } catch(e){}
@@ -176,11 +192,16 @@ const nuage = (function(){
     if (/invalid login credentials/i.test(brut))  return 'E-mail ou mot de passe incorrect.';
     if (/already registered|already exists/i.test(brut)) return 'Un compte existe déjà avec cet e-mail. Utilise l’onglet « Se connecter ».';
     if (/email not confirmed/i.test(brut))        return 'Ton e-mail n’est pas encore confirmé. Ouvre le lien qu’on t’a envoyé par e-mail.';
-    if (/password/i.test(brut) && /short|least/i.test(brut)) return 'Mot de passe trop court : il en faut 8 caractères minimum.';
-    if (/rate limit|too many/i.test(brut))        return 'Trop d’essais d’affilée. Attends une minute avant de réessayer.';
+    if (/password/i.test(brut) && /short|least|weak/i.test(brut)) return 'Mot de passe trop court : il en faut 8 caractères minimum.';
+    if (/same.*password|should be different/i.test(brut)) return 'Ce mot de passe est identique à l’ancien. Choisis-en un autre.';
+    if (/rate limit|too many|over_email_send/i.test(brut)) return 'Trop d’essais d’affilée. Attends une minute avant de réessayer.';
     // panne du service d'envoi : la personne n'y peut rien, autant le dire ainsi
     if (/sending|smtp|mailer/i.test(brut))        return 'L’e-mail n’a pas pu être envoyé. Ce n’est pas toi : le service d’envoi ne répond pas. Réessaie dans un moment.';
-    return brut || 'Le serveur a refusé la demande (' + rep.status + ').';
+    if (/expired|invalid.*token|token.*invalid/i.test(brut)) return 'Ce lien n’est plus valable. Redemande-en un.';
+    if (/not found|no user/i.test(brut))          return 'Aucun compte ne correspond à cette adresse.';
+    if (rep.status === 401 || rep.status === 403) return 'Accès refusé. Reconnecte-toi, puis réessaie.' + petitDetail(brut);
+    if (rep.status >= 500)                        return 'Le serveur rencontre un problème. Réessaie dans un moment.' + petitDetail(brut);
+    return 'La demande n’a pas abouti.' + petitDetail(brut || 'code ' + rep.status);
   }
 
   /* ----- création de compte et connexion ----- */
@@ -188,7 +209,7 @@ const nuage = (function(){
     const rep = await requete('/auth/v1/signup', {
       method: 'POST', body: JSON.stringify({ email, password: motDePasse }),
     });
-    if (!rep.ok) throw new Error(await messageErreur(rep));
+    if (!rep.ok) throw erreurLisible(await messageErreur(rep));
     const d = await rep.json();
     // Supabase peut exiger une confirmation par e-mail : il n'y a alors pas de jeton
     if (!d.access_token) return { confirmation: true };
@@ -200,9 +221,9 @@ const nuage = (function(){
     const rep = await requete('/auth/v1/token?grant_type=password', {
       method: 'POST', body: JSON.stringify({ email, password: motDePasse }),
     });
-    if (!rep.ok) throw new Error(await messageErreur(rep));
+    if (!rep.ok) throw erreurLisible(await messageErreur(rep));
     poserSession(await rep.json());
-    if (!connecte()) throw new Error('Connexion impossible : le serveur n’a pas renvoyé de session.');
+    if (!connecte()) throw erreurLisible('Connexion impossible : le serveur n’a pas renvoyé de session.');
     return { confirmation: false };
   }
 
@@ -218,7 +239,7 @@ const nuage = (function(){
     });
     // un e-mail inconnu renvoie tout de même un succès : c'est voulu côté
     // Supabase, pour ne pas révéler qui a un compte
-    if (!rep.ok) throw new Error(await messageErreur(rep));
+    if (!rep.ok) throw erreurLisible(await messageErreur(rep));
   }
 
   // Lit ce que le lien de l'e-mail a déposé dans l'adresse.
@@ -257,17 +278,17 @@ const nuage = (function(){
       const rep = await requete('/auth/v1/verify', {
         method: 'POST', body: JSON.stringify({ type: 'recovery', token_hash: lien.jeton }),
       });
-      if (!rep.ok) throw new Error(await messageErreur(rep));
+      if (!rep.ok) throw erreurLisible(await messageErreur(rep));
       poserSession(await rep.json());
     }
-    if (!connecte() || !session.uid) throw new Error('Ce lien n’a pas permis d’ouvrir ta session. Redemande un lien.');
+    if (!connecte() || !session.uid) throw erreurLisible('Ce lien n’a pas permis d’ouvrir ta session. Redemande un lien.');
   }
 
   async function changerMotDePasse(nouveau){
     const rep = await donnees('/auth/v1/user', {
       method: 'PUT', body: JSON.stringify({ password: nouveau }),
     });
-    if (!rep.ok) throw new Error(await messageErreur(rep));
+    if (!rep.ok) throw erreurLisible(await messageErreur(rep));
   }
 
   async function deconnecter(){
@@ -281,7 +302,7 @@ const nuage = (function(){
   /* ----- lecture et écriture des données ----- */
   async function tirerTout(){
     const rep = await donnees('/rest/v1/donnees?select=cle,valeur', { method: 'GET' });
-    if (!rep.ok) throw new Error(await messageErreur(rep));
+    if (!rep.ok) throw erreurLisible(await messageErreur(rep));
     const lignes = await rep.json();
     const sortie = {};
     for (const l of lignes) sortie[l.cle] = l.valeur;
@@ -316,11 +337,11 @@ const nuage = (function(){
         headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify(aEcrire),
       });
-      if (!rep.ok) throw new Error(await messageErreur(rep));
+      if (!rep.ok) throw erreurLisible(await messageErreur(rep));
     }
     for (const cle of aSupprimer){
       const rep = await donnees('/rest/v1/donnees?cle=eq.' + encodeURIComponent(cle), { method: 'DELETE' });
-      if (!rep.ok) throw new Error(await messageErreur(rep));
+      if (!rep.ok) throw erreurLisible(await messageErreur(rep));
     }
 
     // seules les clés réellement envoyées sortent de la file : celles modifiées
@@ -3806,7 +3827,7 @@ async function boot(){
         state.compteErreurs = {};
       } catch(e){
         state.compteMode = 'oubli';
-        state.compteErreurs = { general: detailErreur(e) };
+        state.compteErreurs = { general: messageHumain(e) };
       }
     }
     render();
@@ -4838,13 +4859,19 @@ const detailErreur = e => String((e && (e.name && e.message ? e.name + ' : ' + e
 // un e-mail saisi finit dans du HTML : il ne doit pas pouvoir y injecter de balise
 const echapperHtml = t => String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-// « Failed to fetch » ne veut rien dire pour la personne qui l'a sous les yeux
+/* Aucun message d'erreur ne doit arriver en anglais sous les yeux de quelqu'un.
+   Ceux que l'app a rédigés portent une marque et s'affichent tels quels ; ceux
+   du navigateur ou du serveur passent en détail technique, sous une phrase
+   claire — on les garde, ils servent au dépannage. */
 function messageHumain(e){
+  if (e && e.lisible) return e.message;
   const t = String((e && e.message) || e || '');
   if (navigator.onLine === false || /failed to fetch|networkerror|load failed|network request failed/i.test(t)){
     return 'Impossible de joindre le serveur. Vérifie ta connexion, puis réessaie.';
   }
-  return detailErreur(e);
+  if (/abort/i.test(t)) return 'La demande a été interrompue. Réessaie.';
+  return 'Une erreur est survenue. Réessaie dans un moment.'
+    + (t ? `<br><small>Détail technique : ${detailErreur(e)}</small>` : '');
 }
 
 async function validerCompte(){
@@ -8862,7 +8889,7 @@ async function lancerAnalysePhoto(fichier){
     afficherPhotoRepas();
   } catch(e){
     if (!photoRepas || photoRepas.jeton !== jeton) return;
-    photoErreur(e.message || 'Brioche n\u2019a pas pu analyser la photo. Réessaie dans un instant.');
+    photoErreur(messageHumain(e));
   }
 }
 
@@ -8896,12 +8923,12 @@ Règles :
   try {
     reponse = await fetch(adresse, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
   } catch(e){
-    throw new Error('Pas de connexion : l\u2019analyse de la photo a besoin d\u2019internet.');
+    throw erreurLisible('Pas de connexion : l\u2019analyse de la photo a besoin d\u2019internet.');
   }
   if (window.__brioEnLigne && reponse.status === 404){
-    throw new Error('L\u2019analyse photo n\u2019est pas encore branchée sur la version en ligne de BRIO (fonction Netlify « brio-photo » introuvable).');
+    throw erreurLisible('L\u2019analyse photo n\u2019est pas encore branchée sur la version en ligne de BRIO (fonction Netlify « brio-photo » introuvable).');
   }
-  if (!reponse.ok) throw new Error(`Brioche n\u2019a pas pu analyser la photo (erreur ${reponse.status}). Réessaie dans un instant.`);
+  if (!reponse.ok) throw erreurLisible(`Brioche n\u2019a pas pu analyser la photo (erreur ${reponse.status}). Réessaie dans un instant.`);
 
   const data = await reponse.json();
   const texte = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('');
@@ -8909,7 +8936,7 @@ Règles :
   try {
     return JSON.parse(propre.slice(propre.indexOf('{'), propre.lastIndexOf('}') + 1));
   } catch(e){
-    throw new Error('La réponse de Brioche était illisible. Réessaie avec la même photo.');
+    throw erreurLisible('La réponse de Brioche était illisible. Réessaie avec la même photo.');
   }
 }
 
