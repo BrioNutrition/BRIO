@@ -21,6 +21,10 @@ Le stockage du navigateur reste utilisé comme cache : l'app s'ouvre et répond
 sans réseau, et les modifications faites hors connexion repartent au retour du
 réseau.
 
+En cas de mot de passe oublié, Supabase envoie un lien qui ramène sur l'app pour
+en choisir un nouveau. Ce retour suppose que l'adresse du site soit renseignée
+dans Supabase, sous *Authentication → URL Configuration*.
+
 Ouvert depuis un aperçu Claude plutôt qu'en ligne, l'app bascule seule sur un
 stockage local, sans compte ni synchronisation.
 
