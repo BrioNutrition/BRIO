@@ -204,6 +204,70 @@ const nuage = (function(){
     return { confirmation: false };
   }
 
+  /* ----- mot de passe oublié -----
+     Supabase envoie un e-mail dont le lien ramène ici. Selon le réglage du
+     projet, il ramène soit avec une session toute faite dans le « # » de
+     l'adresse, soit avec un jeton à échanger. Les deux sont acceptés. */
+  const adresseRetour = () => location.origin + location.pathname;
+
+  async function demanderReinit(email){
+    const rep = await requete('/auth/v1/recover?redirect_to=' + encodeURIComponent(adresseRetour()), {
+      method: 'POST', body: JSON.stringify({ email }),
+    });
+    // un e-mail inconnu renvoie tout de même un succès : c'est voulu côté
+    // Supabase, pour ne pas révéler qui a un compte
+    if (!rep.ok) throw new Error(await messageErreur(rep));
+  }
+
+  // Lit ce que le lien de l'e-mail a déposé dans l'adresse.
+  function lireLienReinit(){
+    const H = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const Q = new URLSearchParams(location.search || '');
+    const lire = c => H.get(c) || Q.get(c);
+
+    if (lire('error') || lire('error_code')){
+      const d = lire('error_description') || '';
+      return { genre: 'erreur', message: /expired|invalid/i.test(d + lire('error_code'))
+        ? 'Ce lien n’est plus valable. Redemande-en un, ils n’ont qu’une heure de validité.'
+        : (d.replace(/\+/g, ' ') || 'Ce lien n’a pas fonctionné.') };
+    }
+    if (lire('type') !== 'recovery') return null;
+    if (lire('access_token')) return { genre: 'session', access_token: lire('access_token'), refresh_token: lire('refresh_token') };
+    const jeton = lire('token_hash') || lire('token');
+    if (jeton) return { genre: 'jeton', jeton };
+    return null;
+  }
+
+  // Efface les jetons de la barre d'adresse : ils n'ont pas à y rester.
+  function nettoyerAdresse(){
+    try { history.replaceState(null, '', adresseRetour()); } catch(e){}
+  }
+
+  async function ouvrirSessionReinit(lien){
+    if (lien.genre === 'session'){
+      poserSession({ access_token: lien.access_token, refresh_token: lien.refresh_token });
+      // la session du lien ne dit pas qui on est : on complète avec le profil
+      try {
+        const rep = await donnees('/auth/v1/user', { method: 'GET' });
+        if (rep.ok){ const u = await rep.json(); session.uid = u.id; session.email = u.email; ecrireJSON(CLE_SESSION, session); }
+      } catch(e){}
+    } else {
+      const rep = await requete('/auth/v1/verify', {
+        method: 'POST', body: JSON.stringify({ type: 'recovery', token_hash: lien.jeton }),
+      });
+      if (!rep.ok) throw new Error(await messageErreur(rep));
+      poserSession(await rep.json());
+    }
+    if (!connecte() || !session.uid) throw new Error('Ce lien n’a pas permis d’ouvrir ta session. Redemande un lien.');
+  }
+
+  async function changerMotDePasse(nouveau){
+    const rep = await donnees('/auth/v1/user', {
+      method: 'PUT', body: JSON.stringify({ password: nouveau }),
+    });
+    if (!rep.ok) throw new Error(await messageErreur(rep));
+  }
+
   async function deconnecter(){
     try { await requete('/auth/v1/logout', { method: 'POST' }, true); } catch(e){}
     session = null; stockage = null; attente = null;
@@ -331,6 +395,7 @@ const nuage = (function(){
 
   return {
     actif, connecte, demarrer, inscrire, connecter, deconnecter, apresConnexion, vider,
+    demanderReinit, lireLienReinit, ouvrirSessionReinit, changerMotDePasse, nettoyerAdresse,
     email: () => (session && session.email) || null,
     compteLocal: () => lireJSON('brio:compte-dernier', null),
     memoriserCompte: email => ecrireJSON('brio:compte-dernier', { email }),
@@ -2187,6 +2252,11 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     margin:-6px 0 18px;padding:11px 14px;border-radius:var(--radius-sm);
     background:rgba(222,247,229,.65);border:1px solid rgba(67,160,71,.3);
   }
+  .compte-lien{
+    display:block;margin:14px auto 0;background:none;border:none;
+    color:#7B4FE0;font-size:13.5px;font-weight:700;
+    text-decoration:underline;padding:5px 8px;
+  }
   .compte-valider{margin-top:10px;}
   .compte-valider:disabled{opacity:.6;}
   .compte-note{font-size:12.5px;line-height:1.45;color:#8A82A0;text-align:center;margin:16px auto 0;max-width:300px;}
@@ -2886,6 +2956,7 @@ html.sombre .compte-oeil{border:none;background:none;color:#AAA5B7}
 html.sombre .compte-erreur{color:#E48184}
 html.sombre #err_general{background:rgba(76,39,36,0.69);border:1px solid rgba(229,72,77,.25)}
 html.sombre .compte-info{color:#8FD3A6;background:rgba(32,64,45,.7);border-color:rgba(67,160,71,.35)}
+html.sombre .compte-lien{color:#A98DF0}
 html.sombre .compte-note{color:#AAA5B7}
 html.sombre .reg-compte-titre{color:#EDECF4}
 html.sombre .install-texte{color:#EDECF4}
@@ -3714,6 +3785,32 @@ async function boot(){
   }
 
   if (state.userName) await loadGoals();
+
+  // Lien de réinitialisation reçu par e-mail : il passe avant toute autre
+  // navigation, sinon l'app enverrait sur l'écran de connexion habituel.
+  const lien = nuage.actif() ? nuage.lireLienReinit() : null;
+  if (lien){
+    nuage.nettoyerAdresse();
+    state.screen = 'compte';
+    state.compteSaisie = {};
+    state.compteInfo = null;
+    if (lien.genre === 'erreur'){
+      state.compteMode = 'oubli';
+      state.compteErreurs = { general: lien.message };
+    } else {
+      try {
+        await nuage.ouvrirSessionReinit(lien);
+        state.compteMode = 'nouveau';
+        state.compteErreurs = {};
+      } catch(e){
+        state.compteMode = 'oubli';
+        state.compteErreurs = { general: detailErreur(e) };
+      }
+    }
+    render();
+    return;
+  }
+
   await routerDemarrage();
 }
 
@@ -4597,6 +4694,9 @@ async function empreinteMotDePasse(motDePasse, selHex){
 
 function renderCompte(){
   const inscription = state.compteMode === 'inscription';
+  const oubli   = state.compteMode === 'oubli';    // demande du lien par e-mail
+  const nouveau = state.compteMode === 'nouveau';  // retour du lien : choix du nouveau mot de passe
+  const onglets = !oubli && !nouveau;
   const err = state.compteErreurs || {};
   const v = state.compteSaisie || {};
   const profilExistant = !!(state.userName && state.macroGoals && !state.compte);
@@ -4604,14 +4704,17 @@ function renderCompte(){
   const champ = (id, cle) => `class="field ${err[cle] ? 'field-error' : ''}"`;
   const message = cle => (err[cle] || '').trim() ? `<p class="compte-erreur" id="err_${cle}">${err[cle]}</p>` : '';
 
-  const titre = inscription
-    ? (profilExistant ? 'Garde ton suivi' : 'Crée ton compte')
+  const titre = oubli ? 'Mot de passe oublié'
+    : nouveau ? 'Nouveau mot de passe'
+    : inscription ? (profilExistant ? 'Garde ton suivi' : 'Crée ton compte')
     : 'Content de te revoir';
-  const sousTitre = inscription
-    ? (profilExistant
-        ? 'Ton suivi est déjà là. Crée ton compte pour le protéger avec un mot de passe.'
-        : 'Il te servira à retrouver ton suivi à chaque visite.')
-    : 'Connecte-toi pour retrouver ton suivi.';
+  const sousTitre = oubli ? 'Indique ton e-mail : on t’envoie un lien pour en choisir un nouveau.'
+    : nouveau ? 'Choisis-en un nouveau, et tu seras connecté dans la foulée.'
+    : inscription
+      ? (profilExistant
+          ? 'Ton suivi est déjà là. Crée ton compte pour le protéger avec un mot de passe.'
+          : 'Il te servira à retrouver ton suivi à chaque visite.')
+      : 'Connecte-toi pour retrouver ton suivi.';
 
   app.innerHTML = `
     <div class="compte-ecran ${consumeFadeClass()}">
@@ -4619,35 +4722,43 @@ function renderCompte(){
       <h1 class="compte-titre">${titre}</h1>
       <p class="compte-sous">${sousTitre}</p>
 
+      ${onglets ? `
       <div class="compte-onglets stat-verre" role="tablist" aria-label="Type d'accès">
         <span class="compte-onglet-fond ${inscription ? '' : 'droite'}"></span>
         <button class="compte-onglet ${inscription ? 'actif' : ''}" role="tab" aria-selected="${inscription}" data-mode="inscription">Créer un compte</button>
         <button class="compte-onglet ${inscription ? '' : 'actif'}" role="tab" aria-selected="${!inscription}" data-mode="connexion">Se connecter</button>
-      </div>
+      </div>` : ''}
 
       ${window.__brioStockage === 'memoire' ? `<p class="compte-erreur" id="err_stockage">Dans cet aperçu, Claude ne permet pas d\u2019enregistrer : l\u2019app fonctionne, mais ton compte et ton suivi seront perdus à la fermeture. Pour les garder, utilise la version en ligne de BRIO.</p>` : ''}
       ${state.compteInfo ? `<p class="compte-info">${state.compteInfo}</p>` : ''}
       ${message('general')}
 
       <div class="compte-champs">
+        ${nouveau ? '' : `
         <div ${champ('c_email','email')}>
           <label for="c_email">E-mail</label>
           <input id="c_email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="toi@exemple.fr" value="${echappe(v.email)}" ${err.email ? 'aria-invalid="true" aria-describedby="err_email"' : ''}>
           ${message('email')}
-        </div>
+        </div>`}
+        ${oubli ? '' : `
         <div ${champ('c_mdp','mdp')}>
-          <label for="c_mdp">Mot de passe</label>
+          <label for="c_mdp">${nouveau ? 'Nouveau mot de passe' : 'Mot de passe'}</label>
           <div class="compte-mdp">
-            <input id="c_mdp" type="password" autocomplete="${inscription ? 'new-password' : 'current-password'}" placeholder="${inscription ? '8 caractères minimum' : ''}" ${err.mdp ? 'aria-invalid="true" aria-describedby="err_mdp"' : ''}>
+            <input id="c_mdp" type="password" autocomplete="${inscription || nouveau ? 'new-password' : 'current-password'}" placeholder="${inscription || nouveau ? '8 caractères minimum' : ''}" ${err.mdp ? 'aria-invalid="true" aria-describedby="err_mdp"' : ''}>
             <button type="button" class="compte-oeil" id="c_oeil" aria-label="Afficher le mot de passe">${ICONE_OEIL}</button>
           </div>
           ${message('mdp')}
-        </div>
+        </div>`}
       </div>
 
-      <button class="btn-primary compte-valider" id="c_valider">${inscription ? 'Créer mon compte' : 'Me connecter'}</button>
+      <button class="btn-primary compte-valider" id="c_valider">${
+        oubli ? 'Envoyer le lien' : nouveau ? 'Enregistrer' : inscription ? 'Créer mon compte' : 'Me connecter'}</button>
+      ${nuage.actif() && (oubli || (!inscription && !nouveau)) ? `
+        <button class="compte-lien" id="c_lien">${oubli ? 'Revenir à la connexion' : 'Mot de passe oublié ?'}</button>` : ''}
       <p class="compte-note">${nuage.actif()
-        ? (inscription
+        ? (oubli ? 'Le lien n’est valable qu’une heure. Pense à regarder dans tes indésirables.'
+          : nouveau ? 'Choisis un mot de passe d’au moins 8 caractères.'
+          : inscription
             ? 'Ton suivi est rattaché à ton compte : tu le retrouves sur tous tes appareils.'
             : 'Connecte-toi avec l’e-mail utilisé à la création de ton compte.')
         : (inscription
@@ -4665,20 +4776,35 @@ function renderCompte(){
       state.compteSaisie.mdp = '';
       state.compteMode = b.dataset.mode;
       state.compteErreurs = {};
+      state.compteInfo = null;
       render();
     };
   });
 
-  const mdp = document.getElementById('c_mdp');
-  if (v.mdp) mdp.value = v.mdp;
-  const oeil = document.getElementById('c_oeil');
-  oeil.onclick = () => {
-    const visible = mdp.type === 'password';
-    mdp.type = visible ? 'text' : 'password';
-    oeil.innerHTML = visible ? ICONE_OEIL_BARRE : ICONE_OEIL;
-    oeil.setAttribute('aria-label', visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
-    mdp.focus();
+  const lien = document.getElementById('c_lien');
+  if (lien) lien.onclick = () => {
+    const e = document.getElementById('c_email');
+    if (e) state.compteSaisie.email = e.value;
+    state.compteSaisie.mdp = '';
+    state.compteMode = oubli ? 'connexion' : 'oubli';
+    state.compteErreurs = {};
+    state.compteInfo = null;
+    render();
   };
+
+  // le champ mot de passe n'existe pas à l'étape « mot de passe oublié »
+  const mdp = document.getElementById('c_mdp');
+  if (mdp){
+    if (v.mdp) mdp.value = v.mdp;
+    const oeil = document.getElementById('c_oeil');
+    oeil.onclick = () => {
+      const visible = mdp.type === 'password';
+      mdp.type = visible ? 'text' : 'password';
+      oeil.innerHTML = visible ? ICONE_OEIL_BARRE : ICONE_OEIL;
+      oeil.setAttribute('aria-label', visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+      mdp.focus();
+    };
+  }
 
   app.querySelectorAll('.compte-champs input').forEach(i => {
     i.addEventListener('keydown', ev => { if (ev.key === 'Enter') validerCompte(); });
@@ -4707,15 +4833,34 @@ async function enregistrerSur(cle, valeur){
 }
 const detailErreur = e => String((e && (e.name && e.message ? e.name + ' : ' + e.message : e.message)) || e || 'inconnue')
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').slice(0, 160);
+// un e-mail saisi finit dans du HTML : il ne doit pas pouvoir y injecter de balise
+const echapperHtml = t => String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// « Failed to fetch » ne veut rien dire pour la personne qui l'a sous les yeux
+function messageHumain(e){
+  const t = String((e && e.message) || e || '');
+  if (navigator.onLine === false || /failed to fetch|networkerror|load failed|network request failed/i.test(t)){
+    return 'Impossible de joindre le serveur. Vérifie ta connexion, puis réessaie.';
+  }
+  return detailErreur(e);
+}
 
 async function validerCompte(){
   const bouton = document.getElementById('c_valider');
   if (!bouton || bouton.disabled) return;
   state.compteInfo = null;
   const inscription = state.compteMode === 'inscription';
-  const email = document.getElementById('c_email').value.trim().toLowerCase();
-  const mdp = document.getElementById('c_mdp').value;
+  const oubli   = state.compteMode === 'oubli';
+  const nouveau = state.compteMode === 'nouveau';
+  // les deux champs ne sont pas présents à toutes les étapes
+  const champEmail = document.getElementById('c_email');
+  const champMdp   = document.getElementById('c_mdp');
+  const email = champEmail ? champEmail.value.trim().toLowerCase() : ((state.compteSaisie || {}).email || '');
+  const mdp   = champMdp ? champMdp.value : '';
   state.compteSaisie = { email, mdp };
+
+  if (oubli)   { await envoyerLienReinit(email, bouton); return; }
+  if (nouveau) { await enregistrerNouveauMdp(mdp, bouton); return; }
 
   const erreurs = {};
   if (inscription){
@@ -4748,7 +4893,7 @@ async function validerCompte(){
       const r = inscription ? await nuage.inscrire(email, mdp) : await nuage.connecter(email, mdp);
       if (r.confirmation){
         state.compteErreurs = {};
-        state.compteInfo = `Compte créé. Ouvre le lien de confirmation qu’on vient de t’envoyer à <strong>${email}</strong>, puis reviens te connecter.`;
+        state.compteInfo = `Compte créé. Ouvre le lien de confirmation qu’on vient de t’envoyer à <strong>${echapperHtml(email)}</strong>, puis reviens te connecter.`;
         state.compteMode = 'connexion';
         state.compteSaisie = { email };
         renderCompte();
@@ -4760,9 +4905,7 @@ async function validerCompte(){
       state.connecte = true;
     } catch(e){
       state.compteSaisie.mdp = '';
-      state.compteErreurs = { general: navigator.onLine === false
-        ? 'Pas de connexion : impossible de joindre le serveur pour l’instant.'
-        : detailErreur(e) };
+      state.compteErreurs = { general: messageHumain(e) };
       renderCompte();
       return;
     }
@@ -4822,6 +4965,62 @@ async function validerCompte(){
 
   state.compteSaisie = {};
   await routerDemarrage();
+}
+
+/* Mot de passe oublié, première étape : on demande l'envoi du lien.
+   Le message reste volontairement au conditionnel : Supabase répond pareil que
+   l'e-mail ait un compte ou non, et l'app ne doit pas en dire plus que lui. */
+async function envoyerLienReinit(email, bouton){
+  if (!emailValide(email)){
+    state.compteErreurs = { email: email ? "Cet e-mail n'a pas l'air complet (ex : toi@exemple.fr)." : 'Indique ton e-mail.' };
+    renderCompte();
+    return;
+  }
+  bouton.disabled = true;
+  bouton.textContent = 'Envoi…';
+  try {
+    await nuage.demanderReinit(email);
+  } catch(e){
+    state.compteErreurs = { general: messageHumain(e) };
+    renderCompte();
+    return;
+  }
+  state.compteErreurs = {};
+  state.compteInfo = `Si un compte existe pour <strong>${echapperHtml(email)}</strong>, le lien vient de partir. Ouvre-le depuis cet appareil.`;
+  state.compteMode = 'connexion';
+  state.compteSaisie = { email };
+  renderCompte();
+}
+
+/* Deuxième étape : le lien a ouvert une session, il ne reste qu'à poser le
+   nouveau mot de passe. On enchaîne directement sur l'app, sans redemander
+   de se connecter. */
+async function enregistrerNouveauMdp(mdp, bouton){
+  if (mdp.length < 8){
+    state.compteErreurs = { mdp: mdp
+      ? `Encore ${8 - mdp.length} caractère${8 - mdp.length > 1 ? 's' : ''} : il en faut 8 minimum.`
+      : 'Choisis un mot de passe de 8 caractères minimum.' };
+    renderCompte();
+    return;
+  }
+  bouton.disabled = true;
+  bouton.textContent = 'Enregistrement…';
+  try {
+    await nuage.changerMotDePasse(mdp);
+  } catch(e){
+    state.compteErreurs = { general: messageHumain(e) };
+    renderCompte();
+    return;
+  }
+  const email = nuage.email();
+  if (email) nuage.memoriserCompte(email);
+  await nuage.apresConnexion();
+  state.compte = email ? { email } : state.compte;
+  state.connecte = true;
+  state.compteSaisie = {};
+  state.compteErreurs = {};
+  state.compteInfo = null;
+  await boot();
 }
 
 async function seDeconnecter(){
