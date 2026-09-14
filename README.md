@@ -7,8 +7,22 @@ L'application tient dans un seul fichier `index.html` (HTML, CSS et JavaScript
 inclus, polices et images intégrées). Aucune installation ni dépendance :
 il suffit d'ouvrir le fichier dans un navigateur.
 
-Les données sont enregistrées sur l'appareil (stockage du navigateur) et ne sont
-envoyées nulle part.
+## Les comptes et les données
+
+En ligne, chaque personne a un compte et retrouve son suivi sur tous ses
+appareils. Les comptes et les données sont gérés par Supabase ; le schéma de la
+base et les règles d'accès sont dans `supabase/schema.sql`.
+
+Chacun ne peut lire et écrire que ses propres données : c'est garanti par les
+règles RLS de Supabase, côté serveur. La clé présente dans `index.html` est la
+clé publique du projet, prévue pour être visible dans une app web.
+
+Le stockage du navigateur reste utilisé comme cache : l'app s'ouvre et répond
+sans réseau, et les modifications faites hors connexion repartent au retour du
+réseau.
+
+Ouvert depuis un aperçu Claude plutôt qu'en ligne, l'app bascule seule sur un
+stockage local, sans compte ni synchronisation.
 
 ## Mise en ligne
 

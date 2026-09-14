@@ -53,6 +53,290 @@
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();
 
+/* ---------------- Comptes et données rattachés à un compte (Supabase) ----------------
+   En ligne, les données ne vivent plus seulement sur l'appareil : elles sont
+   rattachées à un compte, donc on les retrouve sur un autre téléphone.
+   Le stockage du navigateur reste utilisé comme cache : l'app s'ouvre et répond
+   sans réseau, et les écritures faites hors connexion repartent au retour du réseau.
+
+   La clé ci-dessous est publique, et c'est prévu ainsi : ce sont les règles RLS
+   de Supabase qui empêchent quelqu'un de lire les données d'un autre, pas le
+   secret de la clé. La clé « service_role », elle, ne doit jamais venir ici. */
+const NUAGE_URL = 'https://eebvykkxtukwctofheqn.supabase.co';
+const NUAGE_CLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlYnZ5a2t4dHVrd2N0b2ZoZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzODQyOTksImV4cCI6MjEwNDk2MDI5OX0.ubKPKXqdwzRgUm7DdM7O0SaSoklOT7eDT7FFgDAsNDc';
+
+const nuage = (function(){
+  const CLE_SESSION  = 'brio:session-nuage';
+  const CLE_ATTENTE  = 'brio:attente-nuage';
+  const PREFIXE_ANON = 'brio:';
+  // les clés de service ne sont pas des données de l'utilisateur : elles ne montent
+  // pas dans le nuage. « compte-dernier » en fait partie : c'est un repère propre
+  // à cet appareil, il n'a aucun sens sur un autre téléphone.
+  const RESERVEES = ['session-nuage', 'attente-nuage', 'compte-dernier', 'compte', 'session'];
+
+  let session = null;     // { access_token, refresh_token, uid, email }
+  let stockage = null;    // cache local rattaché au compte connecté
+  let attente = null;     // clés modifiées pas encore envoyées
+  let envoiPrevu = null;
+  let demarre = false;
+
+  const actif = () => !!(window.__brioEnLigne && NUAGE_URL && NUAGE_CLE);
+  const connecte = () => !!(session && session.access_token);
+
+  function lireJSON(cle, defaut){
+    try { const v = localStorage.getItem(cle); return v ? JSON.parse(v) : defaut; } catch(e){ return defaut; }
+  }
+  function ecrireJSON(cle, val){
+    try { val === null ? localStorage.removeItem(cle) : localStorage.setItem(cle, JSON.stringify(val)); } catch(e){}
+  }
+
+  /* ----- le cache local du compte : même interface que window.storage ----- */
+  function creerStockage(uid){
+    const P = 'briou:' + uid + ':';
+    let ls = null;
+    try { ls = window.localStorage; ls.setItem(P + '__test', '1'); ls.removeItem(P + '__test'); } catch(e){ ls = null; }
+    const memoire = {};
+    const lire    = k => ls ? ls.getItem(P + k) : (k in memoire ? memoire[k] : null);
+    const ecrire  = (k, v) => { if (ls) ls.setItem(P + k, v); else memoire[k] = v; };
+    const effacer = k => { if (ls) ls.removeItem(P + k); else delete memoire[k]; };
+    const clefs   = () => ls
+      ? Array.from({ length: ls.length }, (_, i) => ls.key(i)).filter(k => k && k.startsWith(P)).map(k => k.slice(P.length))
+      : Object.keys(memoire);
+
+    return {
+      lire, ecrire, effacer, clefs,
+      async get(key, shared){
+        const v = lire(key);
+        if (v === null) throw new Error('Clé introuvable : ' + key);
+        return { key, value: v, shared: !!shared };
+      },
+      async set(key, value, shared){
+        const v = String(value);
+        ecrire(key, v);
+        marquer(key);
+        return { key, value: v, shared: !!shared };
+      },
+      async delete(key, shared){
+        effacer(key);
+        marquer(key);
+        return { key, deleted: true, shared: !!shared };
+      },
+      async list(prefix, shared){
+        prefix = prefix || '';
+        return { keys: clefs().filter(k => k.startsWith(prefix)), prefix, shared: !!shared };
+      },
+    };
+  }
+
+  /* ----- appels à Supabase ----- */
+  async function requete(chemin, options, jetonUtilisateur){
+    const entetes = Object.assign({
+      apikey: NUAGE_CLE,
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + ((jetonUtilisateur && session && session.access_token) || NUAGE_CLE),
+    }, options.headers || {});
+    return fetch(NUAGE_URL + chemin, Object.assign({}, options, { headers: entetes }));
+  }
+
+  // le jeton d'accès expire au bout d'une heure : on le renouvelle sans rien demander
+  async function rafraichir(){
+    if (!session || !session.refresh_token) return false;
+    try {
+      const rep = await requete('/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', body: JSON.stringify({ refresh_token: session.refresh_token }),
+      });
+      if (!rep.ok) return false;
+      poserSession(await rep.json());
+      return connecte();
+    } catch(e){ return false; }
+  }
+
+  // une requête de données : si le jeton vient d'expirer, on renouvelle et on rejoue une fois
+  async function donnees(chemin, options){
+    let rep = await requete(chemin, options, true);
+    if (rep.status === 401 && await rafraichir()) rep = await requete(chemin, options, true);
+    return rep;
+  }
+
+  function poserSession(d){
+    if (!d || !d.access_token) return;
+    session = {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token || (session && session.refresh_token),
+      uid: (d.user && d.user.id) || (session && session.uid),
+      email: (d.user && d.user.email) || (session && session.email),
+    };
+    ecrireJSON(CLE_SESSION, session);
+  }
+
+  async function messageErreur(rep){
+    let d = {};
+    try { d = await rep.json(); } catch(e){}
+    const brut = String(d.error_description || d.msg || d.message || d.error || '');
+    if (/invalid login credentials/i.test(brut))  return 'E-mail ou mot de passe incorrect.';
+    if (/already registered|already exists/i.test(brut)) return 'Un compte existe déjà avec cet e-mail. Utilise l’onglet « Se connecter ».';
+    if (/email not confirmed/i.test(brut))        return 'Ton e-mail n’est pas encore confirmé. Ouvre le lien qu’on t’a envoyé par e-mail.';
+    if (/password/i.test(brut) && /short|least/i.test(brut)) return 'Mot de passe trop court : il en faut 8 caractères minimum.';
+    if (/rate limit|too many/i.test(brut))        return 'Trop d’essais d’affilée. Attends une minute avant de réessayer.';
+    return brut || 'Le serveur a refusé la demande (' + rep.status + ').';
+  }
+
+  /* ----- création de compte et connexion ----- */
+  async function inscrire(email, motDePasse){
+    const rep = await requete('/auth/v1/signup', {
+      method: 'POST', body: JSON.stringify({ email, password: motDePasse }),
+    });
+    if (!rep.ok) throw new Error(await messageErreur(rep));
+    const d = await rep.json();
+    // Supabase peut exiger une confirmation par e-mail : il n'y a alors pas de jeton
+    if (!d.access_token) return { confirmation: true };
+    poserSession(d);
+    return { confirmation: false };
+  }
+
+  async function connecter(email, motDePasse){
+    const rep = await requete('/auth/v1/token?grant_type=password', {
+      method: 'POST', body: JSON.stringify({ email, password: motDePasse }),
+    });
+    if (!rep.ok) throw new Error(await messageErreur(rep));
+    poserSession(await rep.json());
+    if (!connecte()) throw new Error('Connexion impossible : le serveur n’a pas renvoyé de session.');
+    return { confirmation: false };
+  }
+
+  async function deconnecter(){
+    try { await requete('/auth/v1/logout', { method: 'POST' }, true); } catch(e){}
+    session = null; stockage = null; attente = null;
+    ecrireJSON(CLE_SESSION, null);
+    ecrireJSON(CLE_ATTENTE, null);
+    window.storage = stockageAnonyme;
+  }
+
+  /* ----- lecture et écriture des données ----- */
+  async function tirerTout(){
+    const rep = await donnees('/rest/v1/donnees?select=cle,valeur', { method: 'GET' });
+    if (!rep.ok) throw new Error(await messageErreur(rep));
+    const lignes = await rep.json();
+    const sortie = {};
+    for (const l of lignes) sortie[l.cle] = l.valeur;
+    return sortie;
+  }
+
+  function marquer(cle){
+    if (!connecte() || RESERVEES.includes(cle)) return;
+    attente = attente || new Set(lireJSON(CLE_ATTENTE, []));
+    attente.add(cle);
+    ecrireJSON(CLE_ATTENTE, [...attente]);
+    clearTimeout(envoiPrevu);
+    // on groupe les écritures rapprochées en un seul envoi
+    envoiPrevu = setTimeout(() => { vider().catch(() => {}); }, 600);
+  }
+
+  async function vider(){
+    if (!connecte() || !stockage) return;
+    attente = attente || new Set(lireJSON(CLE_ATTENTE, []));
+    if (!attente.size) return;
+
+    const lot = [...attente];
+    const aEcrire = [], aSupprimer = [];
+    for (const cle of lot){
+      const valeur = stockage.lire(cle);
+      valeur === null ? aSupprimer.push(cle) : aEcrire.push({ user_id: session.uid, cle, valeur });
+    }
+
+    if (aEcrire.length){
+      const rep = await donnees('/rest/v1/donnees?on_conflict=user_id,cle', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(aEcrire),
+      });
+      if (!rep.ok) throw new Error(await messageErreur(rep));
+    }
+    for (const cle of aSupprimer){
+      const rep = await donnees('/rest/v1/donnees?cle=eq.' + encodeURIComponent(cle), { method: 'DELETE' });
+      if (!rep.ok) throw new Error(await messageErreur(rep));
+    }
+
+    // seules les clés réellement envoyées sortent de la file : celles modifiées
+    // entre-temps restent en attente pour le prochain envoi
+    for (const cle of lot) attente.delete(cle);
+    ecrireJSON(CLE_ATTENTE, [...attente]);
+  }
+
+  /* ----- ce que l'appareil contient déjà, avant tout compte ----- */
+  function donneesAnonymes(){
+    const sortie = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++){
+        const brut = localStorage.key(i);
+        if (!brut || !brut.startsWith(PREFIXE_ANON)) continue;
+        const cle = brut.slice(PREFIXE_ANON.length);
+        if (RESERVEES.includes(cle)) continue;
+        sortie[cle] = localStorage.getItem(brut);
+      }
+    } catch(e){}
+    return sortie;
+  }
+
+  function brancher(){
+    stockage = creerStockage(session.uid);
+    window.storage = stockage;
+  }
+
+  /* Après une connexion réussie : on branche le stockage du compte, puis soit on
+     récupère ce qui est déjà en ligne, soit — si le compte est vide — on y fait
+     monter ce qui avait été saisi sur cet appareil avant la création du compte. */
+  async function apresConnexion(){
+    brancher();
+    let distant = null;
+    try { distant = await tirerTout(); } catch(e){ distant = null; }
+
+    if (distant && !Object.keys(distant).length){
+      const local = donneesAnonymes();
+      if (Object.keys(local).length){
+        for (const [cle, valeur] of Object.entries(local)){ stockage.ecrire(cle, valeur); marquer(cle); }
+        try { await vider(); } catch(e){}
+        return;
+      }
+    }
+    if (distant) for (const [cle, valeur] of Object.entries(distant)) stockage.ecrire(cle, valeur);
+  }
+
+  /* Au lancement : on retrouve la session, on rebranche le stockage du compte et
+     on se resynchronise. La synchronisation ne doit jamais retarder l'ouverture
+     de l'app : passé 4 secondes, on démarre sur le cache et elle continue seule. */
+  async function demarrer(){
+    if (!actif() || demarre) return;
+    demarre = true;
+    session = lireJSON(CLE_SESSION, null);
+    if (!connecte()) return;
+    brancher();
+
+    const sync = (async () => {
+      try { await vider(); } catch(e){}
+      try {
+        const distant = await tirerTout();
+        for (const [cle, valeur] of Object.entries(distant)){
+          if (!(attente && attente.has(cle))) stockage.ecrire(cle, valeur);
+        }
+      } catch(e){}
+    })();
+    await Promise.race([sync, new Promise(ok => setTimeout(ok, 4000))]);
+  }
+
+  // les écritures restées en attente repartent dès que la connexion revient
+  window.addEventListener('online', () => { vider().catch(() => {}); });
+
+  const stockageAnonyme = window.storage;
+
+  return {
+    actif, connecte, demarrer, inscrire, connecter, deconnecter, apresConnexion, vider,
+    email: () => (session && session.email) || null,
+    compteLocal: () => lireJSON('brio:compte-dernier', null),
+    memoriserCompte: email => ecrireJSON('brio:compte-dernier', { email }),
+  };
+})();
+
 /* Dans Claude, le stockage peut être indisponible pour certains aperçus
    (« Storage is not available for this artifact »). On vérifie une fois au
    premier accès, puis on bascule sur la meilleure solution qui marche :
@@ -1897,6 +2181,12 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     margin:-6px 0 18px;padding:11px 14px;border-radius:var(--radius-sm);
     background:rgba(255,226,224,.6);border:1px solid rgba(229,72,77,.25);
   }
+  /* une bonne nouvelle (« compte créé ») ne doit pas s'afficher en rouge */
+  .compte-info{
+    font-size:13px;line-height:1.4;color:#2E7D4F;font-weight:600;
+    margin:-6px 0 18px;padding:11px 14px;border-radius:var(--radius-sm);
+    background:rgba(222,247,229,.65);border:1px solid rgba(67,160,71,.3);
+  }
   .compte-valider{margin-top:10px;}
   .compte-valider:disabled{opacity:.6;}
   .compte-note{font-size:12.5px;line-height:1.45;color:#8A82A0;text-align:center;margin:16px auto 0;max-width:300px;}
@@ -2595,6 +2885,7 @@ html.sombre .compte-onglet:focus-visible, html.sombre .compte-oeil:focus-visible
 html.sombre .compte-oeil{border:none;background:none;color:#AAA5B7}
 html.sombre .compte-erreur{color:#E48184}
 html.sombre #err_general{background:rgba(76,39,36,0.69);border:1px solid rgba(229,72,77,.25)}
+html.sombre .compte-info{color:#8FD3A6;background:rgba(32,64,45,.7);border-color:rgba(67,160,71,.35)}
 html.sombre .compte-note{color:#AAA5B7}
 html.sombre .reg-compte-titre{color:#EDECF4}
 html.sombre .install-texte{color:#EDECF4}
@@ -3334,6 +3625,9 @@ function hydrationSubText(ml, goal){
 }
 
 async function boot(){
+  // avant toute lecture : on rebranche le stockage du compte connecté
+  await nuage.demarrer();
+
   try {
     const nameRes = await window.storage.get('user-name', true);
     state.userName = nameRes ? nameRes.value : null;
@@ -3403,14 +3697,21 @@ async function boot(){
   } catch(e){ state.sombre = true; }
   appliquerTheme(state.sombre);
 
-  try {
-    const r = await window.storage.get('compte', true);
-    state.compte = r ? JSON.parse(r.value) : null;
-  } catch(e){ state.compte = null; }
-  try {
-    const r = await window.storage.get('session', true);
-    state.connecte = !!(r && state.compte && r.value === state.compte.email);
-  } catch(e){ state.connecte = false; }
+  if (nuage.actif()){
+    // le compte fait autorité côté serveur ; on garde juste le dernier e-mail
+    // utilisé ici pour pré-remplir l'écran de reconnexion
+    state.compte = nuage.connecte() ? { email: nuage.email() } : nuage.compteLocal();
+    state.connecte = nuage.connecte();
+  } else {
+    try {
+      const r = await window.storage.get('compte', true);
+      state.compte = r ? JSON.parse(r.value) : null;
+    } catch(e){ state.compte = null; }
+    try {
+      const r = await window.storage.get('session', true);
+      state.connecte = !!(r && state.compte && r.value === state.compte.email);
+    } catch(e){ state.connecte = false; }
+  }
 
   if (state.userName) await loadGoals();
   await routerDemarrage();
@@ -4277,6 +4578,7 @@ const ICONE_OEIL_BARRE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 function ouvrirCompte(mode){
   state.compteMode = mode;
   state.compteErreurs = {};
+  state.compteInfo = null;
   state.compteSaisie = {
     email: mode === 'connexion' && state.compte ? state.compte.email : '',
   };
@@ -4324,6 +4626,7 @@ function renderCompte(){
       </div>
 
       ${window.__brioStockage === 'memoire' ? `<p class="compte-erreur" id="err_stockage">Dans cet aperçu, Claude ne permet pas d\u2019enregistrer : l\u2019app fonctionne, mais ton compte et ton suivi seront perdus à la fermeture. Pour les garder, utilise la version en ligne de BRIO.</p>` : ''}
+      ${state.compteInfo ? `<p class="compte-info">${state.compteInfo}</p>` : ''}
       ${message('general')}
 
       <div class="compte-champs">
@@ -4343,9 +4646,13 @@ function renderCompte(){
       </div>
 
       <button class="btn-primary compte-valider" id="c_valider">${inscription ? 'Créer mon compte' : 'Me connecter'}</button>
-      <p class="compte-note">${inscription
-        ? 'Ton compte et ton suivi restent sur cet appareil.'
-        : 'Mot de passe oublié ? La récupération par e-mail arrivera avec la synchronisation en ligne.'}</p>
+      <p class="compte-note">${nuage.actif()
+        ? (inscription
+            ? 'Ton suivi est rattaché à ton compte : tu le retrouves sur tous tes appareils.'
+            : 'Connecte-toi avec l’e-mail utilisé à la création de ton compte.')
+        : (inscription
+            ? 'Ton compte et ton suivi restent sur cet appareil.'
+            : 'Mot de passe oublié ? La récupération par e-mail arrivera avec la synchronisation en ligne.')}</p>
     </div>
   `;
 
@@ -4404,6 +4711,7 @@ const detailErreur = e => String((e && (e.name && e.message ? e.name + ' : ' + e
 async function validerCompte(){
   const bouton = document.getElementById('c_valider');
   if (!bouton || bouton.disabled) return;
+  state.compteInfo = null;
   const inscription = state.compteMode === 'inscription';
   const email = document.getElementById('c_email').value.trim().toLowerCase();
   const mdp = document.getElementById('c_mdp').value;
@@ -4413,19 +4721,53 @@ async function validerCompte(){
   if (inscription){
     if (!emailValide(email)) erreurs.email = email ? "Cet e-mail n'a pas l'air complet (ex : toi@exemple.fr)." : 'Indique ton e-mail.';
     if (mdp.length < 8) erreurs.mdp = mdp ? `Encore ${8 - mdp.length} caractère${8 - mdp.length > 1 ? 's' : ''} : il en faut 8 minimum.` : 'Choisis un mot de passe de 8 caractères minimum.';
-    if (!Object.keys(erreurs).length && state.compte){
+    // en ligne, les comptes vivent sur le serveur : plusieurs personnes peuvent
+    // s'inscrire depuis le même appareil, c'est Supabase qui signale les doublons
+    if (!nuage.actif() && !Object.keys(erreurs).length && state.compte){
       erreurs.general = 'Un compte existe déjà sur cet appareil. Connecte-toi avec son e-mail.';
     }
   } else {
     if (!emailValide(email)) erreurs.email = email ? "Cet e-mail n'a pas l'air complet (ex : toi@exemple.fr)." : 'Indique ton e-mail.';
     if (!mdp) erreurs.mdp = 'Indique ton mot de passe.';
-    if (!Object.keys(erreurs).length && !state.compte){
+    if (!nuage.actif() && !Object.keys(erreurs).length && !state.compte){
       erreurs.general = "Aucun compte n'existe encore sur cet appareil. Crée le tien avec l'onglet « Créer un compte ».";
     }
   }
   if (Object.keys(erreurs).length){
     state.compteErreurs = erreurs;
     renderCompte();
+    return;
+  }
+
+  // En ligne : c'est Supabase qui crée le compte, vérifie le mot de passe et
+  // garde les données. Rien n'est vérifié sur l'appareil.
+  if (nuage.actif()){
+    bouton.disabled = true;
+    bouton.textContent = inscription ? 'Création…' : 'Connexion…';
+    try {
+      const r = inscription ? await nuage.inscrire(email, mdp) : await nuage.connecter(email, mdp);
+      if (r.confirmation){
+        state.compteErreurs = {};
+        state.compteInfo = `Compte créé. Ouvre le lien de confirmation qu’on vient de t’envoyer à <strong>${email}</strong>, puis reviens te connecter.`;
+        state.compteMode = 'connexion';
+        state.compteSaisie = { email };
+        renderCompte();
+        return;
+      }
+      nuage.memoriserCompte(email);
+      await nuage.apresConnexion();
+      state.compte = { email };
+      state.connecte = true;
+    } catch(e){
+      state.compteSaisie.mdp = '';
+      state.compteErreurs = { general: navigator.onLine === false
+        ? 'Pas de connexion : impossible de joindre le serveur pour l’instant.'
+        : detailErreur(e) };
+      renderCompte();
+      return;
+    }
+    state.compteSaisie = {};
+    await boot();   // tout est relu depuis le stockage du compte
     return;
   }
 
@@ -4483,7 +4825,12 @@ async function validerCompte(){
 }
 
 async function seDeconnecter(){
-  try { await window.storage.delete('session', true); } catch(e){}
+  if (nuage.actif()){
+    try { await nuage.vider(); } catch(e){}   // on n'abandonne pas les écritures en attente
+    await nuage.deconnecter();
+  } else {
+    try { await window.storage.delete('session', true); } catch(e){}
+  }
   state.connecte = false;
   ouvrirCompte('connexion');
 }
