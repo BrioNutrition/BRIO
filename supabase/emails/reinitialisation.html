@@ -1,0 +1,73 @@
+<!-- Template Supabase : « Reset Password »
+     À coller dans Authentication → Emails → Templates → Reset Password.
+     Objet suggéré : Ton nouveau mot de passe BRIO
+
+     Le lien DOIT rester {{ .ConfirmationURL }} (ou, en variante,
+     {{ .SiteURL }}?token_hash={{ .TokenHash }}&type=recovery) : l'app
+     reconnaît ces deux formes et aucune autre.
+
+     Mise en page en tableaux et styles en ligne : c'est la seule chose que
+     tous les logiciels de messagerie savent afficher pareil. -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F3EEF7;margin:0;padding:28px 12px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:460px;background:#FFFFFF;border-radius:22px;padding:38px 28px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+        <tr>
+          <td align="center" style="padding-bottom:22px;">
+            <img src="https://brionutrition.github.io/BRIO/icons/icon-192.png" width="72" height="72" alt="BRIO" style="display:block;border:0;border-radius:18px;">
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="font-size:25px;font-weight:800;color:#1C1730;line-height:1.25;padding-bottom:10px;">
+            Nouveau mot de passe
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="font-size:15px;line-height:1.55;color:#5B4A78;padding-bottom:28px;">
+            Tu as demandé à changer le mot de passe de ton compte BRIO.
+            Choisis-en un nouveau, et tu retrouveras ton suivi juste après.
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding-bottom:26px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+              <tr>
+                <td align="center" bgcolor="#7B4FE0" style="border-radius:999px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 32px;font-size:16px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:999px;">Choisir un nouveau mot de passe</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="font-size:12.5px;line-height:1.5;color:#8A82A0;padding-bottom:22px;">
+            Ce lien n’est valable qu’une heure.<br>
+            Si tu n’as rien demandé, ignore ce message : ton mot de passe ne change pas.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="border-top:1px solid #EFE3FA;padding-top:18px;font-size:11.5px;line-height:1.5;color:#A49CB8;" align="center">
+            Le bouton ne fonctionne pas ? Copie cette adresse dans ton navigateur :<br>
+            <span style="color:#7B4FE0;word-break:break-all;">{{ .ConfirmationURL }}</span>
+          </td>
+        </tr>
+
+      </table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:460px;">
+        <tr>
+          <td align="center" style="padding-top:18px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11.5px;color:#8A82A0;">
+            BRIO — ton suivi nutrition, tout simplement.
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>

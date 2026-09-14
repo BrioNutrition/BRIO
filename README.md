@@ -25,6 +25,11 @@ En cas de mot de passe oublié, Supabase envoie un lien qui ramène sur l'app po
 en choisir un nouveau. Ce retour suppose que l'adresse du site soit renseignée
 dans Supabase, sous *Authentication → URL Configuration*.
 
+Les e-mails envoyés aux utilisateurs sont dans `supabase/emails/`. Ce sont des
+copies de référence : Supabase garde les siennes, à coller sous *Authentication
+→ Emails → Templates*. Le lien qu'ils contiennent ne doit pas être remplacé,
+l'app ne reconnaît que les formes décrites en tête de chaque fichier.
+
 Ouvert depuis un aperçu Claude plutôt qu'en ligne, l'app bascule seule sur un
 stockage local, sans compte ni synchronisation.
 
