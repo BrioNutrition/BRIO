@@ -1532,7 +1532,8 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
     text-align:center;animation:sheetSlideUp .32s cubic-bezier(.32,.72,0,1);
   }
   #weightDetailSheet{
-    min-height:78vh;max-height:85vh;display:flex;flex-direction:column;
+    min-height:94vh;max-height:94vh;display:flex;flex-direction:column;
+    overflow-y:auto;overscroll-behavior:contain;
   }
   #weightDetailSheet .weight-history-list{flex:1;max-height:none;}
   .weight-detail-title{font-weight:600;font-size:15px;color:#1C1730;text-align:center;margin-bottom:14px;}
@@ -2501,6 +2502,7 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .cal-number, .macro-num, .progress-square-value, .stat-gros-num,
   .recap-kcal, .recap-macro-val, .conseil-val, .tile-record, .menu-card-cal,
   .weight-detail-current, .weight-picker-value, .serie-fx-nombre, .serie-nombre,
+  .poids-sel-valeur, .poids-analyse .stat-tuile-val,
   .photo-titre, .photo-plat, .photo-total-val{
     font-family:var(--police-titre);letter-spacing:0;
   }
@@ -7201,6 +7203,7 @@ function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
   const x = i => L + (n === 1 ? pw / 2 : i * pw / (n - 1));
   const y = v => T + ph - ((v - bas) / (haut - bas)) * ph;
 
+  const axe = v => v.toFixed(1).replace('.', ',');
   const iSel = Math.max(0, serie.findIndex(p => p.cle === cleSel));
   const r = n > 10 ? 2.2 : 3.4;
   const pas = n > 10 ? Math.ceil(n / 5) : 1;
@@ -7217,11 +7220,11 @@ function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
     <svg class="stat-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du poids, ${n} point${n > 1 ? 's' : ''}">
       <line x1="${L}" x2="${W - R}" y1="${T}" y2="${T}" stroke="${trait}" stroke-width="1"/>
       <line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="${trait}" stroke-width="1"/>
-      <text x="${L - 6}" y="${T + 3}" text-anchor="end">${haut.toFixed(1)}</text>
-      <text x="${L - 6}" y="${T + ph + 3}" text-anchor="end">${bas.toFixed(1)}</text>
+      <text x="${L - 6}" y="${T + 3}" text-anchor="end">${axe(haut)}</text>
+      <text x="${L - 6}" y="${T + ph + 3}" text-anchor="end">${axe(bas)}</text>
       ${objectif ? `
         <line x1="${L}" x2="${W - R}" y1="${y(objectif).toFixed(1)}" y2="${y(objectif).toFixed(1)}" stroke="var(--stat-couleur)" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="4 4"/>
-        <text x="${L - 6}" y="${(y(objectif) + 3).toFixed(1)}" text-anchor="end" class="lab-obj">${objectif.toFixed(1)}</text>` : ''}
+        <text x="${L - 6}" y="${(y(objectif) + 3).toFixed(1)}" text-anchor="end" class="lab-obj">${axe(objectif)}</text>` : ''}
       <line x1="${x(iSel).toFixed(1)}" x2="${x(iSel).toFixed(1)}" y1="${T}" y2="${T + ph}" stroke="${state.sombre ? '#FFFFFF' : '#1C1730'}" stroke-opacity=".14" stroke-width="1.5"/>
       ${n > 1 ? `<path d="${chemin}" class="ligne ${animer ? 'anime' : ''}" pathLength="1"/>` : ''}
       <circle cx="${x(iSel).toFixed(1)}" cy="${y(serie[iSel].valeur).toFixed(1)}" r="${r + 2}" class="halo"/>
@@ -7456,7 +7459,7 @@ function renderProgres(){
         ${(poids && poidsObjectif) ? (
           Math.abs(poids - poidsObjectif) < 0.05
             ? `<div class="progress-square-sub weight-objective-reached">Objectif atteint</div>`
-            : `<div class="progress-square-sub weight-objective ${(poids - poidsObjectif) > 0 ? 'weight-objective-over' : ''}">${(poids - poidsObjectif) > 0 ? '+' : ''}${(poids - poidsObjectif).toFixed(1)} kg vs obj.</div>`
+            : `<div class="progress-square-sub weight-objective ${(poids - poidsObjectif) > 0 ? 'weight-objective-over' : ''}">${poidsEcart(poids - poidsObjectif)} vs obj.</div>`
         ) : ''}
         <button class="weight-edit-btn${state.weightHistory[viewDay] == null ? ' weight-edit-btn-beat' : ''}" id="weightEditBtn">+</button>
       </div>
@@ -7489,13 +7492,13 @@ function renderProgres(){
           </div>
           <div class="weight-detail-header">
             <div>
-              <div class="weight-detail-current">${poids ? poids.toFixed(1) + ' kg' : '—'}</div>
+              <div class="weight-detail-current">${poids ? poidsKg(poids) : '—'}</div>
               <div class="weight-detail-date">${formatFullDateFR(new Date((weightInfo.date || viewDay) + 'T00:00:00'))}</div>
             </div>
             ${(poids && poidsObjectif) ? `
               <div class="weight-target-col">
                 <span class="weight-target-status ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${poids > poidsObjectif ? 'Hors cible' : 'Maintenu'}</span>
-                <span class="weight-target-diff ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${(poids - poidsObjectif) > 0 ? '+' : ''}${(poids - poidsObjectif).toFixed(1)} kg vs obj.</span>
+                <span class="weight-target-diff ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${poidsEcart(poids - poidsObjectif)} vs obj.</span>
               </div>
             ` : ''}
           </div>
