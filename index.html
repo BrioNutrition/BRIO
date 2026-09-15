@@ -2100,7 +2100,15 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
     100%{transform:scale(2.7);opacity:0;}
   }
   @media (prefers-reduced-motion:reduce){ .stat-graph .halo{animation:none;} }
-  .poids-analyse{color:#1C1730;}
+  .poids-analyse{color:#1C1730;text-align:left;}
+  .poids-analyse .stat-aide,
+  .poids-analyse .stat-note{text-align:center;}
+  /* le verre ne se superpose pas : posées sur une carte elle-même en verre,
+     les tuiles perdaient leur relief. Elles sont donc à même la feuille. */
+  .poids-sel{margin-top:18px;}
+  .poids-analyse .stat-graph .ligne{stroke-width:1.8;}
+  .poids-analyse .stat-graph .point{stroke-width:1.6;}
+  .poids-analyse .stat-graph .halo{stroke-width:1.5;}
   .poids-sel-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
   .poids-sel-quand{font-size:12.5px;font-weight:600;color:#8A82A0;}
   .poids-sel-valeur{font-size:28px;font-weight:800;color:#1C1730;line-height:1.1;margin-top:3px;}
@@ -7194,7 +7202,7 @@ function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
   const y = v => T + ph - ((v - bas) / (haut - bas)) * ph;
 
   const iSel = Math.max(0, serie.findIndex(p => p.cle === cleSel));
-  const r = n > 10 ? 3 : 4.5;
+  const r = n > 10 ? 2.2 : 3.4;
   const pas = n > 10 ? Math.ceil(n / 5) : 1;
   const trait = state.sombre ? 'rgba(255,255,255,.12)' : '#E4D3F5';
   const chemin = serie.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.valeur).toFixed(1)).join(' ');
@@ -7225,25 +7233,49 @@ function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
 }
 
 function commentairePoidsBrioche(serie, objectif, variation){
-  if (!serie.length) return 'Note ton poids et je t’accompagne à partir de là.';
-  if (serie.length < 3) return 'Encore deux ou trois pesées et je pourrai te montrer ta tendance. Pèse-toi toujours dans les mêmes conditions, le matin de préférence.';
+  if (!serie.length) return 'Note ton poids et je t\u2019accompagne \u00e0 partir de l\u00e0.';
+  if (serie.length < 3){
+    return 'Encore deux ou trois pes\u00e9es et je pourrai te montrer ta tendance. P\u00e8se-toi toujours dans les m\u00eames conditions, le matin de pr\u00e9f\u00e9rence.';
+  }
 
+  const kg = n => Math.abs(n).toFixed(1).replace('.', ',') + ' kg';
   const actuel = serie[serie.length - 1].valeur;
   const bouge = Math.abs(variation) >= 0.3;
-  if (!objectif){
-    if (!bouge) return 'Ton poids est stable sur la période. C’est une bonne base ; fixe-toi un objectif et on le suivra ensemble.';
-    return `Tu as ${variation < 0 ? 'perdu' : 'pris'} ${Math.abs(variation).toFixed(1).replace('.', ',')} kg sur la période. Fixe-toi un objectif et je te dirai où tu en es.`;
+  const monte = variation > 0;
+  // sans objectif, on ne sait pas si monter est une bonne nouvelle : on s'en tient aux faits
+  const reste = objectif ? actuel - objectif : null;
+  const atteint = reste != null && Math.abs(reste) < 0.3;
+  const veutMaigrir = reste != null && reste > 0;
+  const veutPrendre = reste != null && reste < 0;
+  const bonSens = (veutMaigrir && !monte) || (veutPrendre && monte);
+
+  if (atteint){
+    return 'Tu es pile sur ton objectif \u2014 bravo. Le plus dur commence : le tenir. Je reste avec toi \uD83C\uDF31';
   }
 
-  const reste = actuel - objectif;
-  if (Math.abs(reste) < 0.3) return 'Tu es pile sur ton objectif. Le plus dur commence : le tenir. Je reste avec toi 🌱';
-
-  const versObjectif = (reste > 0 && variation < 0) || (reste < 0 && variation > 0);
-  if (!bouge) return `Ton poids tient bon, à ${Math.abs(reste).toFixed(1).replace('.', ',')} kg de ton objectif. La stabilité, c’est déjà une réussite — on repart quand tu veux.`;
-  if (versObjectif){
-    return `${Math.abs(variation).toFixed(1).replace('.', ',')} kg dans le bon sens, et plus que ${Math.abs(reste).toFixed(1).replace('.', ',')} kg pour y être. Tu avances avec brio, continue comme ça !`;
+  if (!bouge){
+    return reste == null
+      ? 'Ton poids est stable sur la p\u00e9riode. Se maintenir demande autant de constance que de changer : c\u2019est d\u00e9j\u00e0 une r\u00e9ussite.'
+      : `Ton poids tient bon, \u00e0 ${kg(reste)} de ton objectif. La stabilit\u00e9 n\u2019est pas du surplace : c\u2019est ce qui rend la suite solide. On repart quand tu veux.`;
   }
-  return `La courbe s’éloigne un peu de ton objectif en ce moment. Ça arrive à tout le monde et ça ne défait rien : on reprend tranquillement, un jour à la fois.`;
+
+  // ce que la personne redoute de lire : ici Brioche rassure, elle ne sermonne pas
+  if (monte && !veutPrendre){
+    return reste == null
+      ? `+${kg(variation)} sur la p\u00e9riode. Le poids monte et descend pour mille raisons \u2014 l\u2019eau, le sel, le sommeil \u2014 et un chiffre n\u2019efface rien de ce que tu fais. Regarde la tendance sur plusieurs semaines plut\u00f4t que jour apr\u00e8s jour.`
+      : `+${kg(variation)} sur la p\u00e9riode. \u00c7a arrive \u00e0 tout le monde, et \u00e7a ne d\u00e9fait pas le chemin parcouru. Le corps varie beaucoup d\u2019un jour \u00e0 l\u2019autre : reprends tranquillement, sans rien serrer d\u2019un coup.`;
+  }
+
+  if (!monte && veutPrendre){
+    return `\u2212${kg(variation)} alors que tu cherches \u00e0 prendre. Pas de panique : ajoute simplement un peu partout plut\u00f4t qu\u2019un gros repas, c\u2019est ce qui tient sur la dur\u00e9e.`;
+  }
+
+  // le poids va dans le sens voulu : on félicite, en gardant le cap visible
+  if (bonSens){
+    return `${monte ? '+' : '\u2212'}${kg(variation)} dans le bon sens, et plus que ${kg(reste)} pour y \u00eatre. Tu avances avec brio \u2014 continue exactement comme \u00e7a !`;
+  }
+
+  return `${monte ? '+' : '\u2212'}${kg(variation)} sur la p\u00e9riode. Tu avances, et c\u2019est le genre de progr\u00e8s qui dure quand il est r\u00e9gulier. Fixe-toi un objectif si tu veux que je suive le cap avec toi.`;
 }
 
 function poidsAnalyseHtml(){
@@ -7290,7 +7322,7 @@ function poidsAnalyseHtml(){
       ${poidsGraphiqueSvg(serie, objectif, sel.cle, poidsFeuille.animer)}
       <div class="stat-aide">Touche un point pour le détail de ${poidsFeuille.echelle === 'jours' ? 'ce jour' : poidsFeuille.echelle === 'semaines' ? 'cette semaine' : 'ce mois'}.</div>
 
-      <div class="stat-recap stat-verre">
+      <div class="poids-sel">
         <div class="poids-sel-tete">
           <div>
             <div class="poids-sel-quand">${sel.long}</div>
@@ -7310,7 +7342,7 @@ function poidsAnalyseHtml(){
       <div class="stat-bilan">
         ${tuile(poidsEcart(variation), 'Variation')}
         ${tuile(poidsKg(moyenne), 'Moyenne')}
-        ${tuile(`${poidsKg(Math.min(...vals))} → ${poidsKg(Math.max(...vals))}`.replace(/ kg/g, ''), 'Plus bas · plus haut')}
+        ${tuile(`${poidsKg(Math.min(...vals))} → ${poidsKg(Math.max(...vals))}`.replace(/ kg/g, ''), 'Extrêmes')}
       </div>
       <div class="stat-note">${pesees} pesée${pesees > 1 ? 's' : ''} sur la période.${poidsFeuille.echelle !== 'jours' ? ` Chaque point est la moyenne ${poidsFeuille.echelle === 'semaines' ? 'de sa semaine' : 'de son mois'}.` : ''}</div>
 
