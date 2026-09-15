@@ -1434,9 +1434,7 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .weight-history-list{
     margin-top:18px;max-height:280px;overflow-y:auto;text-align:left;
   }
-  #weightHistorySheet{
-    min-height:70vh;max-height:82vh;display:flex;flex-direction:column;
-  }
+  #weightHistorySheet{display:flex;flex-direction:column;}
   .weight-history-list-full{max-height:none;margin-top:16px;flex:1;}
   .weight-history-row{
     display:flex;justify-content:space-between;padding:11px 2px;
@@ -1534,16 +1532,20 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   /* La vue d'ensemble du poids est bâtie comme la feuille des calories :
      un fond dégradé opaque, sur lequel le verre des cases se détache.
      Sur une feuille elle-même en verre blanc, les cases devenaient invisibles. */
-  #weightDetailSheet{
+  #weightDetailSheet,
+  #weightHistorySheet{
     min-height:94vh;max-height:94vh;
-    overflow-y:auto;overscroll-behavior:contain;
     background:linear-gradient(180deg, #E4CFF7 0%, #EDE1F5 45%, #F3EEF7 100%);
     background-attachment:local;
     backdrop-filter:none;-webkit-backdrop-filter:none;
     border:1.5px solid rgba(255,255,255,.9);border-bottom:none;
   }
+  /* la vue d'ensemble défile d'un seul bloc ; l'historique garde son en-tête
+     en place et ne fait défiler que sa liste */
+  #weightDetailSheet{overflow-y:auto;overscroll-behavior:contain;}
   /* le voile derrière, comme pour les calories : la feuille se détache du fond */
-  #weightDetailBackdrop{background:rgba(28,23,48,.18);animation:fondApparait .25s ease;}
+  #weightDetailBackdrop,
+  #weightHistoryBackdrop{background:rgba(28,23,48,.18);animation:fondApparait .25s ease;}
   .weight-detail-title{font-weight:600;font-size:15px;color:#1C1730;text-align:center;margin-bottom:14px;}
   .weight-detail-header{display:flex;justify-content:space-between;align-items:center;text-align:left;margin-bottom:14px;margin-top:6px;}
   .weight-detail-current{font-weight:700;font-size:26px;color:#1C1730;}
@@ -2278,8 +2280,6 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   html:has(.weight-sheet-backdrop, .stat-backdrop, .photo-fond) body{overflow:hidden;overscroll-behavior:none;}
   .weight-history-list,.stat-sheet,.photo-sheet{overscroll-behavior:contain;}
   .photo-sheet{will-change:transform;}
-  /* l'historique fait la même taille que la vue d'ensemble : plus de deuxième feuille qui dépasse derrière */
-  #weightHistorySheet{min-height:78vh;max-height:85vh;}
   #weightHistorySheet .cat-header h1{color:#1C1730;}
   /* le voile du fond apparaît sans toucher à l'opacité (qui cassait l'effet verre de la feuille) */
   .stat-backdrop{animation:fondApparait .25s ease;}
@@ -3004,8 +3004,10 @@ html.sombre .brioche-bulle.humeur-alerte .brioche-texte::before{background:rgba(
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte{background:rgba(36,76,47,0.632);color:#8FD6AD}
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte::before{background:rgba(36,76,47,0.632)}
 html.sombre .stat-sheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local}
-html.sombre #weightDetailSheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local;border:1.5px solid rgba(255,255,255,0.144);border-bottom:none}
-html.sombre #weightDetailBackdrop{background:rgba(28,23,48,.18)}
+html.sombre #weightDetailSheet,
+html.sombre #weightHistorySheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local;border:1.5px solid rgba(255,255,255,0.144);border-bottom:none}
+html.sombre #weightDetailBackdrop,
+html.sombre #weightHistoryBackdrop{background:rgba(28,23,48,.18)}
 html.sombre .stat-verre{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112);box-shadow:none}
 html.sombre .stat-periode.actif{background:#2E2548;box-shadow:none}
 html.sombre .stat-verre.vert{background:rgba(36,76,47,0.69);border-color:rgba(67,160,71,.45)}
@@ -7453,7 +7455,7 @@ function renderProgres(){
     return `
       <div class="weight-history-row">
         <span class="weight-history-date">${label}</span>
-        <span class="weight-history-value">${state.weightHistory[d].toFixed(1)} kg</span>
+        <span class="weight-history-value">${poidsKg(state.weightHistory[d])}</span>
       </div>`;
   }).join('');
 
