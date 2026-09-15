@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>BRIO</title>
-<meta name="theme-color" content="#1D1226">
+<meta name="theme-color" content="#E4CFF7">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BRIO">
@@ -493,14 +493,15 @@ const nuage = (function(){
   };
 })();
 
-// Mode sombre : c'est le thème principal. Il est appliqué avant le premier
-// affichage ; seul un choix « clair » enregistré dans les réglages l'enlève.
+// Mode clair : c'est le thème principal. Le thème est posé avant le premier
+// affichage, pour ne pas ouvrir sur un fond qui change juste après ; seul un
+// choix « sombre » enregistré dans les réglages fonce l'app.
 function appliquerTheme(sombre){
   document.documentElement.classList.toggle('sombre', !!sombre);
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', sombre ? '#1D1226' : '#E4CFF7');
 }
-try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme') === 'clair')); } catch(e){ appliquerTheme(true); }
+try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') === 'sombre'); } catch(e){ appliquerTheme(false); }
 
 // Si une erreur empêche l'app de démarrer, on l'affiche à la place de
 // « Chargement… » : sans ça, l'écran reste bloqué sans aucune explication.
@@ -3588,7 +3589,7 @@ let state = {
   body: { poids: null, taille: null, poidsObjectif: null },
   weightHistory: {},     // { "YYYY-MM-DD": poids le plus bas du jour }
   streak: { dernier: null, jours: 0, record: 0 },  // série de jours consécutifs
-  sombre: true,          // mode sombre : thème principal, désactivable dans les réglages
+  sombre: false,         // mode sombre : proposé dans les réglages, clair par défaut
   favoris: [],           // aliments favoris (valeurs pour 100 g/ml)
   foodOnglet: 'suggestions', // dernier onglet ouvert dans la recherche d'aliments
   editingWeight: false,
@@ -4028,8 +4029,8 @@ async function boot(){
 
   try {
     const r = await window.storage.get('theme', true);
-    state.sombre = !(r && r.value === 'clair');   // sombre par défaut
-  } catch(e){ state.sombre = true; }
+    state.sombre = !!(r && r.value === 'sombre');   // clair par défaut
+  } catch(e){ state.sombre = false; }
   appliquerTheme(state.sombre);
 
   if (nuage.actif()){
