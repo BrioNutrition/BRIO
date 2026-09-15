@@ -1431,38 +1431,6 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .repas-theme .progress-square-sub.weight-objective-reached{color:#43A047;}
   .weight-kg-suffix{color:var(--muted);font-weight:500;font-size:16px;margin-left:3px;}
   .repas-theme .weight-kg-suffix{color:#8A82A0;}
-  .weight-chart{position:relative;margin-top:14px;}
-  .weight-chart-svg{width:100%;height:40px;overflow:visible;display:block;}
-  #weightDetailSheet .weight-chart-svg{height:140px;}
-  .weight-chart-line{
-    fill:none;stroke:#7B4FE0;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;
-    /* le tracé est étiré à la largeur du conteneur : sans ça, l'épaisseur
-       du trait s'étirerait avec lui et varierait d'un écran à l'autre */
-    vector-effect:non-scaling-stroke;
-  }
-  .weight-chart-zone{fill:rgba(123,79,224,.13);stroke:none;}
-  /* Le point courant est un élément HTML, pas un <circle> : l'étirement du SVG
-     ovaliserait un cercle dessiné dedans. Ici il reste rond à toute taille. */
-  .weight-chart-point{
-    position:absolute;width:12px;height:12px;border-radius:50%;
-    background:#7B4FE0;transform:translate(-50%,-50%);pointer-events:none;
-    /* l'anneau de fond le détache de la courbe qui passe dessous */
-    box-shadow:0 0 0 2px #F7F3FC;
-  }
-  /* même respiration que le bouton d'ajout de poids */
-  .weight-chart-point::before,
-  .weight-chart-point::after{
-    content:'';position:absolute;left:50%;top:50%;
-    width:100%;height:100%;border-radius:50%;
-    border:2px solid rgba(123,79,224,.8);
-    transform:translate(-50%,-50%) scale(1);
-    opacity:0;pointer-events:none;
-    animation:weightBtnBeat 5s ease-out infinite;
-  }
-  .weight-chart-point::after{animation-delay:.4s;}
-  @media (prefers-reduced-motion:reduce){
-    .weight-chart-point::before,.weight-chart-point::after{animation:none;}
-  }
   .weight-history-list{
     margin-top:18px;max-height:280px;overflow-y:auto;text-align:left;
   }
@@ -1570,7 +1538,7 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .weight-detail-title{font-weight:600;font-size:15px;color:#1C1730;text-align:center;margin-bottom:14px;}
   .weight-detail-header{display:flex;justify-content:space-between;align-items:center;text-align:left;margin-bottom:14px;margin-top:6px;}
   .weight-detail-current{font-weight:700;font-size:26px;color:#1C1730;}
-  .weight-detail-date{font-size:13px;color:#8A82A0;margin-top:2px;text-transform:capitalize;}
+  .weight-detail-date{font-size:13px;color:#8A82A0;margin-top:2px;}
   @keyframes sheetSlideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .weight-sheet.no-slide-anim{animation:none;}
   /* ---------- animation de série ---------- */
@@ -2116,6 +2084,28 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .stat-graph .point.sel{fill:var(--stat-couleur);}
   .stat-graph .point.sel.rouge{fill:#E8781F;}
   .stat-graph .zone{cursor:pointer;fill:transparent;}
+  /* le point sélectionné respire, comme le bouton d'ajout de poids.
+     transform-box : sans lui, l'échelle partirait du coin du SVG et non du point */
+  .stat-graph .halo{
+    fill:none;stroke:var(--stat-couleur);stroke-width:2;
+    transform-box:fill-box;transform-origin:center;
+    opacity:0;pointer-events:none;
+    animation:poidsHalo 5s ease-out infinite;
+  }
+  .stat-graph .halo.retard{animation-delay:.4s;}
+  @keyframes poidsHalo{
+    0%{transform:scale(1);opacity:.85;}
+    12%{opacity:.45;}
+    26%{transform:scale(2.7);opacity:0;}
+    100%{transform:scale(2.7);opacity:0;}
+  }
+  @media (prefers-reduced-motion:reduce){ .stat-graph .halo{animation:none;} }
+  .poids-analyse{color:#1C1730;}
+  .poids-sel-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .poids-sel-quand{font-size:12.5px;font-weight:600;color:#8A82A0;}
+  .poids-sel-valeur{font-size:28px;font-weight:800;color:#1C1730;line-height:1.1;margin-top:3px;}
+  .poids-sel-pesees{font-size:11px;font-weight:600;color:#8A82A0;text-align:right;flex-shrink:0;padding-top:2px;}
+  .poids-analyse .stat-tuiles{margin-top:16px;}
   .stat-aide{font-size:11.5px;color:#8A82A0;text-align:center;margin-top:6px;}
   .stat-bilan{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
   .stat-note{font-size:11px;color:#8A82A0;margin-top:8px;text-align:center;}
@@ -2793,11 +2783,6 @@ html.sombre .weight-objective-reached{color:#8FD6AD}
 html.sombre .repas-theme .progress-square-sub.weight-objective-reached{color:#8FD6AD}
 html.sombre .weight-kg-suffix{color:var(--muted)}
 html.sombre .repas-theme .weight-kg-suffix{color:#AAA5B7}
-html.sombre .weight-chart-line{stroke:#A98DF0}
-html.sombre .weight-chart-zone{fill:rgba(169,141,240,0.16)}
-html.sombre .weight-chart-point{background:#A98DF0;box-shadow:0 0 0 2px #2E2548}
-html.sombre .weight-chart-point::before,
-html.sombre .weight-chart-point::after{border-color:rgba(169,141,240,.8)}
 html.sombre .weight-history-row{border-bottom:1px solid #44335B}
 html.sombre .weight-history-row:last-child{border-bottom:none}
 html.sombre .weight-history-date{color:#EDECF4}
@@ -2939,6 +2924,10 @@ html.sombre .stat-periode{border:none;background:none;color:#AAA5B7}
 html.sombre .stat-periode.actif{background:#2E2548;color:#EDECF4;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 html.sombre .stat-graph text{fill:#AAA5B7}
 html.sombre .stat-graph .lab-sel{fill:#EDECF4}
+html.sombre .poids-analyse{color:#EDECF4}
+html.sombre .poids-sel-quand{color:#AAA5B7}
+html.sombre .poids-sel-valeur{color:#EDECF4}
+html.sombre .poids-sel-pesees{color:#AAA5B7}
 html.sombre .stat-graph .lab-obj{fill:var(--stat-couleur)}
 html.sombre .stat-graph .ligne{fill:none;stroke:var(--stat-couleur)}
 html.sombre .stat-graph .point{fill:#454545;stroke:var(--stat-couleur)}
@@ -7092,48 +7081,6 @@ async function undoWater(){
 }
 
 /* ---------------- écran Progrès ---------------- */
-/* Le tracé est étiré à la largeur de son conteneur : commode pour la courbe,
-   mais fatal pour un cercle, qui s'ovalise. Le point de la dernière pesée est
-   donc posé par-dessus en HTML, en pourcentage du cadre — rond parfait quelle
-   que soit la taille, et libre de porter la même respiration que le bouton
-   d'ajout de poids. L'historique sous le graphique donne les mêmes valeurs
-   en toutes lettres : la courbe n'a rien à annoncer toute seule. */
-function buildWeightChartSVG(history){
-  const points = Object.keys(history).sort().slice(-14).map(d => history[d]);
-  if (!points.length) return '';
-
-  const W = 240, H = 40, PAD = 5;
-  const pointCourant = (x, y) =>
-    `<span class="weight-chart-point" style="left:${(x / W * 100).toFixed(2)}%;top:${(y / H * 100).toFixed(2)}%"></span>`;
-
-  if (points.length === 1){
-    return `<div class="weight-chart">
-      <svg viewBox="0 0 ${W} ${H}" class="weight-chart-svg" preserveAspectRatio="none" aria-hidden="true"></svg>
-      ${pointCourant(W / 2, H / 2)}
-    </div>`;
-  }
-
-  const min = Math.min(...points);
-  const amplitude = (Math.max(...points) - min) || 1;
-  const pasX = (W - PAD * 2) / (points.length - 1);
-  const coords = points.map((v, i) => [
-    +(PAD + i * pasX).toFixed(1),
-    +(PAD + (1 - (v - min) / amplitude) * (H - PAD * 2)).toFixed(1),
-  ]);
-
-  const ligne = coords.map(c => c.join(',')).join(' ');
-  const aire = `${coords[0][0]},${H} ${ligne} ${coords[coords.length - 1][0]},${H}`;
-  const [dernierX, dernierY] = coords[coords.length - 1];
-
-  return `<div class="weight-chart">
-    <svg viewBox="0 0 ${W} ${H}" class="weight-chart-svg" preserveAspectRatio="none" aria-hidden="true">
-      <polygon points="${aire}" class="weight-chart-zone"/>
-      <polyline points="${ligne}" class="weight-chart-line"/>
-    </svg>
-    ${pointCourant(dernierX, dernierY)}
-  </div>`;
-}
-
 function imcCategory(imc){
   if (imc < 18.5) return 'Insuffisance pondérale';
   if (imc < 25) return 'Corpulence normale';
@@ -7167,6 +7114,237 @@ function buildRulerTicks(){
   return html;
 }
 
+/* ---------------- Analyse du poids ----------------
+   Trois échelles de lecture. Les pesées jour par jour montrent le détail, mais
+   le poids oscille d'un jour à l'autre pour des raisons qui n'ont rien à voir
+   avec la graisse : les semaines et les mois sont donc des moyennes, seules
+   capables de dégager une tendance de fond. */
+const POIDS_ECHELLES = {
+  jours:    { libelle: 'Jours',    n: 30, periode: '30 derniers jours' },
+  semaines: { libelle: 'Semaines', n: 12, periode: '12 dernières semaines' },
+  mois:     { libelle: 'Mois',     n: 12, periode: '12 derniers mois' },
+};
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+let poidsFeuille = { echelle: 'jours', point: null, animer: true };
+
+const poidsKg = v => v.toFixed(1).replace('.', ',') + ' kg';
+// un écart ne veut rien dire sans son signe : le moins typographique se lit mieux
+const poidsEcart = kg => (kg > 0 ? '+' : kg < 0 ? '−' : '') + Math.abs(kg).toFixed(1).replace('.', ',') + ' kg';
+
+function lundiDe(cle){
+  const d = new Date(cle + 'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // la semaine commence lundi
+  return dateKey(d);
+}
+
+function poidsSerie(echelle){
+  const hist = state.weightHistory || {};
+  const dates = Object.keys(hist).sort();
+  if (!dates.length) return [];
+  const conf = POIDS_ECHELLES[echelle];
+  const fin = state.viewDate || todayKey();
+
+  if (echelle === 'jours'){
+    const debut = decalerJour(fin, 1 - conf.n);
+    return dates.filter(d => d >= debut && d <= fin).map(d => {
+      const dt = new Date(d + 'T00:00:00');
+      return { cle: d, valeur: hist[d], pesees: 1,
+               court: `${dt.getDate()}/${dt.getMonth() + 1}`,
+               long: formatFullDateFR(dt) };
+    });
+  }
+
+  const seaux = new Map();
+  for (const d of dates){
+    if (d > fin) continue;
+    const cle = echelle === 'semaines' ? lundiDe(d) : d.slice(0, 7);
+    if (!seaux.has(cle)) seaux.set(cle, []);
+    seaux.get(cle).push(hist[d]);
+  }
+  return [...seaux.keys()].sort().slice(-conf.n).map(cle => {
+    const vals = seaux.get(cle);
+    const moyenne = vals.reduce((a, b) => a + b, 0) / vals.length;
+    if (echelle === 'semaines'){
+      const lun = new Date(cle + 'T00:00:00');
+      const dim = new Date(lun); dim.setDate(dim.getDate() + 6);
+      return { cle, valeur: moyenne, pesees: vals.length,
+               court: `${lun.getDate()}/${lun.getMonth() + 1}`,
+               long: `Semaine du ${lun.getDate()} au ${dim.getDate()} ${MOIS_FR[dim.getMonth()]}` };
+    }
+    const [an, m] = cle.split('-');
+    return { cle, valeur: moyenne, pesees: vals.length,
+             court: MOIS_FR[+m - 1].slice(0, 4),
+             long: `${MOIS_FR[+m - 1]} ${an}` };
+  });
+}
+
+/* L'échelle verticale d'un poids ne part pas de zéro — sinon toutes les courbes
+   seraient plates. Du coup elle est tronquée, et les bornes doivent être
+   écrites sur l'axe : sans elles, un demi-kilo prend l'allure d'un effondrement. */
+function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
+  const W = 330, H = 186, L = 42, R = 14, T = 16, B = 30;
+  const pw = W - L - R, ph = H - T - B;
+  const vals = serie.map(p => p.valeur);
+  let bas = Math.min(...vals), haut = Math.max(...vals);
+  if (objectif){ bas = Math.min(bas, objectif); haut = Math.max(haut, objectif); }
+  const marge = (haut - bas) * 0.18 || 1;
+  bas -= marge; haut += marge;
+  const n = serie.length;
+  const x = i => L + (n === 1 ? pw / 2 : i * pw / (n - 1));
+  const y = v => T + ph - ((v - bas) / (haut - bas)) * ph;
+
+  const iSel = Math.max(0, serie.findIndex(p => p.cle === cleSel));
+  const r = n > 10 ? 3 : 4.5;
+  const pas = n > 10 ? Math.ceil(n / 5) : 1;
+  const trait = state.sombre ? 'rgba(255,255,255,.12)' : '#E4D3F5';
+  const chemin = serie.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.valeur).toFixed(1)).join(' ');
+  const largZone = n === 1 ? pw : pw / (n - 1);
+
+  const labelsX = serie.map((p, i) => {
+    if (i !== iSel && ((n - 1 - i) % pas !== 0 || Math.abs(i - iSel) < 1.5)) return '';
+    return `<text x="${x(i).toFixed(1)}" y="${H - 9}" text-anchor="middle" class="${i === iSel ? 'lab-sel' : ''}">${p.court}</text>`;
+  }).join('');
+
+  return `
+    <svg class="stat-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du poids, ${n} point${n > 1 ? 's' : ''}">
+      <line x1="${L}" x2="${W - R}" y1="${T}" y2="${T}" stroke="${trait}" stroke-width="1"/>
+      <line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="${trait}" stroke-width="1"/>
+      <text x="${L - 6}" y="${T + 3}" text-anchor="end">${haut.toFixed(1)}</text>
+      <text x="${L - 6}" y="${T + ph + 3}" text-anchor="end">${bas.toFixed(1)}</text>
+      ${objectif ? `
+        <line x1="${L}" x2="${W - R}" y1="${y(objectif).toFixed(1)}" y2="${y(objectif).toFixed(1)}" stroke="var(--stat-couleur)" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <text x="${L - 6}" y="${(y(objectif) + 3).toFixed(1)}" text-anchor="end" class="lab-obj">${objectif.toFixed(1)}</text>` : ''}
+      <line x1="${x(iSel).toFixed(1)}" x2="${x(iSel).toFixed(1)}" y1="${T}" y2="${T + ph}" stroke="${state.sombre ? '#FFFFFF' : '#1C1730'}" stroke-opacity=".14" stroke-width="1.5"/>
+      ${n > 1 ? `<path d="${chemin}" class="ligne ${animer ? 'anime' : ''}" pathLength="1"/>` : ''}
+      <circle cx="${x(iSel).toFixed(1)}" cy="${y(serie[iSel].valeur).toFixed(1)}" r="${r + 2}" class="halo"/>
+      <circle cx="${x(iSel).toFixed(1)}" cy="${y(serie[iSel].valeur).toFixed(1)}" r="${r + 2}" class="halo retard"/>
+      ${serie.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.valeur).toFixed(1)}" r="${i === iSel ? r + 2 : r}" class="point ${i === iSel ? 'sel' : ''}"/>`).join('')}
+      ${labelsX}
+      ${serie.map((p, i) => `<rect class="zone" data-point="${p.cle}" x="${(x(i) - largZone / 2).toFixed(1)}" y="0" width="${largZone.toFixed(1)}" height="${H}"/>`).join('')}
+    </svg>`;
+}
+
+function commentairePoidsBrioche(serie, objectif, variation){
+  if (!serie.length) return 'Note ton poids et je t’accompagne à partir de là.';
+  if (serie.length < 3) return 'Encore deux ou trois pesées et je pourrai te montrer ta tendance. Pèse-toi toujours dans les mêmes conditions, le matin de préférence.';
+
+  const actuel = serie[serie.length - 1].valeur;
+  const bouge = Math.abs(variation) >= 0.3;
+  if (!objectif){
+    if (!bouge) return 'Ton poids est stable sur la période. C’est une bonne base ; fixe-toi un objectif et on le suivra ensemble.';
+    return `Tu as ${variation < 0 ? 'perdu' : 'pris'} ${Math.abs(variation).toFixed(1).replace('.', ',')} kg sur la période. Fixe-toi un objectif et je te dirai où tu en es.`;
+  }
+
+  const reste = actuel - objectif;
+  if (Math.abs(reste) < 0.3) return 'Tu es pile sur ton objectif. Le plus dur commence : le tenir. Je reste avec toi 🌱';
+
+  const versObjectif = (reste > 0 && variation < 0) || (reste < 0 && variation > 0);
+  if (!bouge) return `Ton poids tient bon, à ${Math.abs(reste).toFixed(1).replace('.', ',')} kg de ton objectif. La stabilité, c’est déjà une réussite — on repart quand tu veux.`;
+  if (versObjectif){
+    return `${Math.abs(variation).toFixed(1).replace('.', ',')} kg dans le bon sens, et plus que ${Math.abs(reste).toFixed(1).replace('.', ',')} kg pour y être. Tu avances avec brio, continue comme ça !`;
+  }
+  return `La courbe s’éloigne un peu de ton objectif en ce moment. Ça arrive à tout le monde et ça ne défait rien : on reprend tranquillement, un jour à la fois.`;
+}
+
+function poidsAnalyseHtml(){
+  const serie = poidsSerie(poidsFeuille.echelle);
+  const conf = POIDS_ECHELLES[poidsFeuille.echelle];
+  const objectif = state.body.poidsObjectif || null;
+  const onglets = Object.entries(POIDS_ECHELLES).map(([id, c]) =>
+    `<button class="stat-periode ${poidsFeuille.echelle === id ? 'actif' : ''}" data-echelle="${id}">${c.libelle}</button>`).join('');
+  const entete = `
+    <div class="stat-evol-tete">
+      <div class="stat-evol-titre">Évolution</div>
+      <div class="stat-periodes stat-verre">${onglets}</div>
+    </div>`;
+
+  if (!serie.length){
+    return `<div class="poids-analyse" style="--stat-couleur:${state.sombre ? '#A98DF0' : '#7B4FE0'};--stat-piste:${state.sombre ? 'rgba(255,255,255,.1)' : '#E4D3F5'};--stat-fond:rgba(123,79,224,.08)">
+      ${entete}
+      <div class="stat-vide" style="margin-top:14px;">Aucune pesée sur cette période.</div>
+      <div class="stat-brioche stat-verre">
+        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        <div>${commentairePoidsBrioche(serie, objectif, 0)}</div>
+      </div>
+    </div>`;
+  }
+
+  let iSel = serie.findIndex(p => p.cle === poidsFeuille.point);
+  if (iSel < 0) iSel = serie.length - 1;
+  const sel = serie[iSel];
+  const precedent = iSel > 0 ? serie[iSel - 1] : null;
+  const premier = serie[0];
+  const variation = serie[serie.length - 1].valeur - premier.valeur;
+  const vals = serie.map(p => p.valeur);
+  const moyenne = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const pesees = serie.reduce((s, p) => s + p.pesees, 0);
+  const libEchelle = poidsFeuille.echelle === 'jours' ? 'vs pesée d’avant'
+    : poidsFeuille.echelle === 'semaines' ? 'vs semaine d’avant' : 'vs mois d’avant';
+
+  const tuile = (val, lab, teinte) =>
+    `<div class="stat-tuile stat-verre ${teinte || ''}"><div class="stat-tuile-val">${val}</div><div class="stat-tuile-lab">${lab}</div></div>`;
+
+  return `
+    <div class="poids-analyse" style="--stat-couleur:${state.sombre ? '#A98DF0' : '#7B4FE0'};--stat-piste:${state.sombre ? 'rgba(255,255,255,.1)' : '#E4D3F5'};--stat-fond:rgba(123,79,224,.08)">
+      ${entete}
+      ${poidsGraphiqueSvg(serie, objectif, sel.cle, poidsFeuille.animer)}
+      <div class="stat-aide">Touche un point pour le détail de ${poidsFeuille.echelle === 'jours' ? 'ce jour' : poidsFeuille.echelle === 'semaines' ? 'cette semaine' : 'ce mois'}.</div>
+
+      <div class="stat-recap stat-verre">
+        <div class="poids-sel-tete">
+          <div>
+            <div class="poids-sel-quand">${sel.long}</div>
+            <div class="poids-sel-valeur">${poidsKg(sel.valeur)}</div>
+          </div>
+          ${sel.pesees > 1 ? `<span class="poids-sel-pesees">moyenne de ${sel.pesees} pesées</span>` : ''}
+        </div>
+        <div class="stat-tuiles">
+          ${tuile(precedent ? poidsEcart(sel.valeur - precedent.valeur) : '—', precedent ? libEchelle : 'Premier point')}
+          ${tuile(iSel > 0 ? poidsEcart(sel.valeur - premier.valeur) : '—', 'Depuis le début')}
+          ${tuile(objectif ? poidsEcart(sel.valeur - objectif) : '—', objectif ? 'vs objectif' : 'Pas d’objectif',
+                  objectif && Math.abs(sel.valeur - objectif) < 0.3 ? 'vert' : '')}
+        </div>
+      </div>
+
+      <div class="stat-evol-titre" style="margin-top:22px;">Sur ${conf.periode}</div>
+      <div class="stat-bilan">
+        ${tuile(poidsEcart(variation), 'Variation')}
+        ${tuile(poidsKg(moyenne), 'Moyenne')}
+        ${tuile(`${poidsKg(Math.min(...vals))} → ${poidsKg(Math.max(...vals))}`.replace(/ kg/g, ''), 'Plus bas · plus haut')}
+      </div>
+      <div class="stat-note">${pesees} pesée${pesees > 1 ? 's' : ''} sur la période.${poidsFeuille.echelle !== 'jours' ? ` Chaque point est la moyenne ${poidsFeuille.echelle === 'semaines' ? 'de sa semaine' : 'de son mois'}.` : ''}</div>
+
+      <div class="stat-brioche stat-verre">
+        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        <div>${commentairePoidsBrioche(serie, objectif, variation)}</div>
+      </div>
+    </div>`;
+}
+
+function poidsAnalyseBrancher(){
+  const bloc = document.querySelector('.poids-analyse');
+  if (!bloc) return;
+  bloc.querySelectorAll('.stat-periode').forEach(b => {
+    b.onclick = () => {
+      poidsFeuille.echelle = b.dataset.echelle;
+      poidsFeuille.point = null;      // la sélection n'a plus de sens d'une échelle à l'autre
+      poidsFeuille.animer = true;
+      poidsAnalyseRafraichir();
+    };
+  });
+  bloc.querySelectorAll('.stat-graph .zone').forEach(z => {
+    z.onclick = () => { poidsFeuille.point = z.dataset.point; poidsFeuille.animer = false; poidsAnalyseRafraichir(); };
+  });
+}
+
+function poidsAnalyseRafraichir(){
+  const hote = document.getElementById('poidsAnalyse');
+  if (!hote) return;
+  hote.innerHTML = poidsAnalyseHtml();
+  poidsFeuille.animer = false;
+  poidsAnalyseBrancher();
+}
+
 function renderProgres(){
   // Jour de référence = le jour sélectionné dans le calendrier de l'accueil
   const viewDay = state.viewDate || todayKey();
@@ -7180,7 +7358,7 @@ function renderProgres(){
   const poidsObjectif = state.body.poidsObjectif;
 
   const sortedHistoryDates = Object.keys(state.weightHistory).sort().reverse();
-  const weightDetailChart = buildWeightChartSVG(state.weightHistory);
+  const weightDetailChart = poidsAnalyseHtml();
   const FULL_DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   const weightDetailList = sortedHistoryDates.map(d => {
     const dt = new Date(d + 'T00:00:00');
@@ -7289,7 +7467,7 @@ function renderProgres(){
               </div>
             ` : ''}
           </div>
-          ${weightDetailChart || `<p class="onboard-q" style="margin-top:14px;">Pas encore de données enregistrées.</p>`}
+          <div id="poidsAnalyse">${weightDetailChart}</div>
         </div>
       </div>
     ` : '')
@@ -7364,6 +7542,7 @@ function renderProgres(){
       state.showWeightMoreMenu = false;
       renderProgres();
     };
+    poidsAnalyseBrancher();
     const fermerDetailAnime = brancherGlisserFermer(detailSheet, detailBackdrop, closeDetail);
     detailBackdrop.onclick = (e) => { if (e.target === detailBackdrop) fermerDetailAnime(); };
 
