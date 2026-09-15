@@ -1552,6 +1552,11 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .weight-detail-date{font-size:13px;color:#8A82A0;margin-top:2px;}
   @keyframes sheetSlideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .weight-sheet.no-slide-anim{animation:none;}
+  /* Un clic dans une feuille ouverte redessine tout l'écran Progrès. Sans
+     ça, le voile sombre repartait de zéro à chaque fois : l'écran derrière
+     semblait clignoter alors que rien ne s'ouvrait. */
+  #weightDetailBackdrop.no-fade-anim,
+  #weightHistoryBackdrop.no-fade-anim{animation:none;}
   /* ---------- animation de série ---------- */
   .serie-fx{
     position:fixed;inset:0;z-index:60;
@@ -7445,6 +7450,9 @@ function renderProgres(){
 
   const sortedHistoryDates = Object.keys(state.weightHistory).sort().reverse();
   const weightDetailChart = poidsAnalyseHtml();
+  // le tracé de la courbe est joué une fois, à l'ouverture : sans ça il
+  // repartait de zéro dès qu'un clic dans la feuille redessinait l'écran
+  poidsFeuille.animer = false;
   const FULL_DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   const weightDetailList = sortedHistoryDates.map(d => {
     const dt = new Date(d + 'T00:00:00');
@@ -7527,7 +7535,7 @@ function renderProgres(){
       </div>
     ` : '')
     + (state.showWeightDetail ? `
-      <div class="weight-sheet-backdrop" id="weightDetailBackdrop">
+      <div class="weight-sheet-backdrop ${feuillesDejaOuvertes.detail ? 'no-fade-anim' : ''}" id="weightDetailBackdrop">
         <div class="weight-sheet ${feuillesDejaOuvertes.detail ? 'no-slide-anim' : ''}" id="weightDetailSheet">
           <div class="weight-sheet-handle" id="weightDetailHandle"></div>
           <div class="weight-panel-header">
@@ -7559,7 +7567,7 @@ function renderProgres(){
       </div>
     ` : '')
     + (state.showWeightHistoryList ? `
-      <div class="weight-sheet-backdrop" id="weightHistoryBackdrop">
+      <div class="weight-sheet-backdrop ${feuillesDejaOuvertes.historique ? 'no-fade-anim' : ''}" id="weightHistoryBackdrop">
         <div class="weight-sheet ${feuillesDejaOuvertes.historique ? 'no-slide-anim' : ''}" id="weightHistorySheet">
           <div class="weight-sheet-handle" id="weightHistoryHandle"></div>
           <div class="cat-header">
@@ -7615,6 +7623,7 @@ function renderProgres(){
     weightSquareEl.onclick = () => {
       skipImcAnim = true;
       state.showWeightDetail = true;
+      poidsFeuille.animer = true;   // à l'ouverture, la courbe se trace
       renderProgres();
     };
   }
