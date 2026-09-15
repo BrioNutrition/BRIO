@@ -530,6 +530,9 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     --police:'DM Sans',sans-serif;                       /* textes courants */
     --police-titre:'DynaPuff','DM Sans',sans-serif;       /* titres et gros chiffres */
     --bg:#5121D6;
+    /* fond de la page : il suit le thème, contrairement à --bg qui sert
+       aussi de couleur de texte sur les boutons clairs */
+    --fond-page:#EDE1F5;
     --paper:#3D1C9A;
     --ink:#FFFFFF;
     --muted:#C7B9F2;
@@ -544,7 +547,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   *{box-sizing:border-box;letter-spacing:-0.01em;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--bg);
+    background:var(--fond-page);
     color:var(--ink);
     font-family:var(--police);
     font-weight:400;
@@ -556,7 +559,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     width:100%;
     max-width:460px;
     min-height:100vh;
-    background:var(--bg);
+    background:var(--fond-page);
     padding:28px 20px 60px;
     position:relative;
   }
@@ -2225,8 +2228,6 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .stat-backdrop{animation:fondApparait .25s ease;}
   @keyframes fondApparait{from{background-color:transparent;}}
   @media (prefers-reduced-motion: reduce){ .stat-backdrop{animation:none;} }
-  /* sur téléphone, le fond de la page suit le thème clair : plus de violet vif quand l'écran rebondit */
-  @media (max-width:480px){ body:has(#app.repas-theme){background:#EDE1F5;} }
 
   /* ---------- écran compte ---------- */
   .intro-deja{
@@ -2568,8 +2569,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
 /* Mode sombre : chaque règle de couleur de la feuille principale, reprise
    avec des teintes foncées. Actif quand <html> porte la classe « sombre ». */
 @keyframes repasHalo-sombre{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.154), 0 4px 16px rgba(253,149,61,0.14), 0 0 0 0 rgba(253,149,61,0)}50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.154), 0 4px 16px rgba(253,149,61,0.196), 0 0 0 5px rgba(253,149,61,0.168)}}
-html.sombre body{background:var(--bg);color:var(--ink)}
-html.sombre #app{background:var(--bg)}
+html.sombre body{color:var(--ink)}
 html.sombre .muted{color:var(--muted)}
 html.sombre .loading-wrap{color:var(--muted)}
 html.sombre .setup-card p{color:var(--muted)}
@@ -2965,7 +2965,6 @@ html.sombre .confirm-annuler{background:rgba(123,79,224,0.192);color:#A58ADB}
 html.sombre .confirm-supprimer{background:#D9534F;color:#fff}
 html.sombre #weightHistorySheet .cat-header h1{color:#EDECF4}
 @media (max-width:480px){
-html.sombre body:has(#app.repas-theme){background:#23152C}
 }
 html.sombre .intro-deja{background:none;border:none;color:#A98DF0}
 html.sombre .compte-brio{box-shadow:0 8px 18px rgba(0,0,0,0.286)}
@@ -3047,8 +3046,7 @@ html.sombre .photo-quota.epuise{color:#A697CE;background:rgba(123,79,224,0.16)}
 /* barres de fermeture des feuilles : même gris que les contours des cases
    (placé ici pour ne plus être écrasé quand le thème sombre est régénéré) */
 html.sombre .weight-sheet-handle{background:rgba(255,255,255,.114);}
-html.sombre{color-scheme:dark;}
-html.sombre body{background:#1D1226;}
+html.sombre{color-scheme:dark;--fond-page:#1D1226;}
 html.sombre .reg-switch::after{background:#FFFFFF;box-shadow:0 2px 5px rgba(0,0,0,.35);}
 html.sombre .reg-switch{background:rgba(255,255,255,.16);}
 html.sombre .reg-switch:checked{background:#7B4FE0;}
