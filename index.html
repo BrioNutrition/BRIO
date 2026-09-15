@@ -3223,156 +3223,67 @@ html.sombre .repas-prompt-emoji,html.sombre .photo-type span{color:#A98DF0;}
 .fiche-autre{display:block;margin:14px auto 0;background:none;border:none;color:#B3A9C9;font-size:13px;font-weight:600;text-decoration:underline;cursor:pointer;}
 .scan-fond.avec-fiche .scan-source{padding-top:22px;}
 </style>
-<style id="compte-glass">
-/* ---------------- Espace compte : verre liquide ----------------
-   Le verre ne se voit que s'il a quelque chose à filtrer : l'écran pose
-   d'abord deux halos colorés en fond, puis les cartes les floutent.
-   Chaque carte porte trois couches : le fond translucide, un reflet en haut
-   à gauche (::before) et un liseré clair à l'intérieur (box-shadow inset). */
+<style id="compte-espace">
+/* ---------------- Espace compte ----------------
+   Les cartes de cet écran sont celles du reste de l'app : on réutilise
+   .recap-card telle quelle, et on ne règle ici que ce qui lui manque
+   (l'agencement des lignes, l'avatar, les repères du haut). */
 
-.rg-aurora{
-  position:fixed;top:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:460px;height:100vh;
-  z-index:0;pointer-events:none;overflow:hidden;
-}
-.rg-aurora i{
-  position:absolute;display:block;border-radius:50%;
-  filter:blur(58px);opacity:.85;
-}
-.rg-aurora i:nth-child(1){width:300px;height:300px;top:-70px;left:-90px;background:rgba(123,79,224,.55);}
-.rg-aurora i:nth-child(2){width:260px;height:260px;top:130px;right:-100px;background:rgba(253,149,61,.32);}
-.rg-aurora i:nth-child(3){width:320px;height:320px;top:430px;left:-60px;background:rgba(88,196,220,.26);}
-.rg-aurora i:nth-child(4){width:280px;height:280px;bottom:-60px;right:-80px;background:rgba(224,79,178,.28);}
-html.sombre .rg-aurora i{opacity:.6;filter:blur(66px);}
-html.sombre .rg-aurora i:nth-child(1){background:rgba(123,79,224,.75);}
-html.sombre .rg-aurora i:nth-child(2){background:rgba(253,149,61,.30);}
-html.sombre .rg-aurora i:nth-child(3){background:rgba(88,196,220,.26);}
-html.sombre .rg-aurora i:nth-child(4){background:rgba(224,79,178,.30);}
+/* --- carte d'identité --- */
+.rg-hero{padding:24px 18px 18px;text-align:center;}
 
-.rg-espace{position:relative;z-index:1;padding-bottom:34px;}
-
-/* --- la carte de verre, base commune --- */
-.lg{
-  position:relative;overflow:hidden;
-  border-radius:26px;
-  background:linear-gradient(148deg, rgba(255,255,255,.66) 0%, rgba(255,255,255,.34) 48%, rgba(255,255,255,.50) 100%);
-  backdrop-filter:blur(26px) saturate(185%);
-  -webkit-backdrop-filter:blur(26px) saturate(185%);
-  border:1px solid rgba(255,255,255,.75);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.92),
-    inset 0 -1px 0 rgba(255,255,255,.35),
-    0 16px 36px -20px rgba(60,28,110,.50);
-}
-/* le reflet : une lueur qui vient du coin haut-gauche, comme sur une vitre */
-.lg::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(125% 78% at 10% -12%, rgba(255,255,255,.55), rgba(255,255,255,0) 58%);
-}
-.lg > *{position:relative;z-index:1;}
-
-html.sombre .lg{
-  background:linear-gradient(148deg, rgba(255,255,255,.13) 0%, rgba(255,255,255,.045) 48%, rgba(255,255,255,.085) 100%);
-  border:1px solid rgba(255,255,255,.155);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.22),
-    inset 0 -1px 0 rgba(255,255,255,.06),
-    0 20px 44px -24px rgba(0,0,0,.85);
-}
-html.sombre .lg::before{
-  background:radial-gradient(125% 78% at 10% -12%, rgba(255,255,255,.17), rgba(255,255,255,0) 58%);
-}
-
-/* --- en-tête de l'écran --- */
-.rg-entete{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
-.rg-entete h1{font-size:28px;line-height:1.1;letter-spacing:-.035em;margin:0;color:#1C1730;}
-html.sombre .rg-entete h1{color:#EDECF4;}
-
-/* --- carte identité --- */
-.rg-hero{padding:26px 20px 20px;text-align:center;margin-bottom:16px;}
-/* une bande de lumière traverse lentement la carte : c'est ce qui rend le
-   verre « liquide » plutôt que simplement dépoli */
-.rg-hero::after{
-  content:'';position:absolute;top:-40%;left:-60%;width:55%;height:180%;
-  background:linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.38), rgba(255,255,255,0));
-  transform:rotate(14deg);pointer-events:none;
-  animation:lgReflet 7s ease-in-out infinite;
-}
-html.sombre .rg-hero::after{
-  background:linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.14), rgba(255,255,255,0));
-}
-@keyframes lgReflet{
-  0%,100%{left:-60%;opacity:0;}
-  38%{opacity:1;}
-  70%,100%{left:118%;opacity:0;}
-}
-@media (prefers-reduced-motion: reduce){ .rg-hero::after{animation:none;opacity:0;} }
-
-.rg-avatar-zone{position:relative;width:104px;height:104px;margin:0 auto 14px;}
+.rg-avatar-zone{position:relative;width:100px;height:100px;margin:0 auto 14px;}
 .rg-avatar{
-  position:relative;width:104px;height:104px;padding:0;border:none;background:none;
+  position:relative;width:100px;height:100px;padding:0;border:none;background:none;
   border-radius:50%;cursor:pointer;display:block;
   -webkit-tap-highlight-color:transparent;
   transition:transform .18s cubic-bezier(.34,1.4,.64,1);
 }
 .rg-avatar:active{transform:scale(.95);}
-/* l'anneau : un dégradé net autour d'un disque de verre */
+/* l'anneau reprend le verre des cartes, au lieu d'un dégradé à lui */
 .rg-avatar-anneau{
-  position:absolute;inset:0;border-radius:50%;padding:3px;
-  background:conic-gradient(from 210deg, #7B4FE0, #C59BFF, #FD953D, #58C4DC, #7B4FE0);
-  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite:exclude;
+  position:absolute;inset:0;border-radius:50%;
+  background:rgba(255,255,255,.45);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid rgba(255,255,255,.7);
 }
+html.sombre .rg-avatar-anneau{background:rgba(46,37,72,.595);border-color:rgba(255,255,255,.112);}
 .rg-avatar-disque{
-  position:absolute;inset:3px;border-radius:50%;overflow:hidden;
+  position:absolute;inset:5px;border-radius:50%;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(150deg, #8B5CF0, #6132C6);
-  box-shadow:inset 0 2px 6px rgba(255,255,255,.35), 0 8px 20px -10px rgba(40,16,90,.7);
+  background:#7B4FE0;
 }
 .rg-avatar-disque img{width:100%;height:100%;object-fit:cover;display:block;}
-.rg-avatar-initiale{
-  font-family:var(--police-titre);font-size:40px;color:#fff;line-height:1;
-  text-shadow:0 2px 8px rgba(30,12,70,.45);
-}
+.rg-avatar-initiale{font-family:var(--police-titre);font-size:38px;color:#fff;line-height:1;}
 .rg-avatar-badge{
-  position:absolute;right:-2px;bottom:-2px;width:34px;height:34px;border-radius:50%;
+  position:absolute;right:0;bottom:0;width:32px;height:32px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.80);
-  backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);
-  border:1px solid rgba(255,255,255,.9);
-  box-shadow:0 6px 16px -6px rgba(40,16,90,.55);
+  background:rgba(255,255,255,.45);
+  backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%);
+  border:1px solid rgba(255,255,255,.7);
   color:#6B3FC4;
 }
-.rg-avatar-badge svg{width:17px;height:17px;}
+.rg-avatar-badge svg{width:16px;height:16px;}
 html.sombre .rg-avatar-badge{
-  background:rgba(58,44,92,.82);border:1px solid rgba(255,255,255,.22);color:#D9C9FF;
+  background:rgba(46,37,72,.595);border-color:rgba(255,255,255,.112);color:#C0A6FF;
 }
 .rg-avatar-charge{
-  position:absolute;inset:3px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  position:absolute;inset:5px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:rgba(28,23,48,.45);color:#fff;font-size:11.5px;font-weight:700;
 }
 
-.rg-hero-nom{font-family:var(--police-titre);font-size:25px;line-height:1.15;color:#1C1730;margin:0;}
+.rg-hero-nom{font-family:var(--police-titre);font-size:24px;line-height:1.15;color:#1C1730;margin:0;}
 html.sombre .rg-hero-nom{color:#EDECF4;}
-.rg-hero-mail{
-  display:inline-flex;align-items:center;gap:6px;margin:8px auto 0;
-  padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:600;
-  color:#5B4B86;background:rgba(123,79,224,.13);border:1px solid rgba(123,79,224,.18);
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-html.sombre .rg-hero-mail{color:#CBBDEC;background:rgba(169,141,240,.16);border-color:rgba(169,141,240,.24);}
-.rg-hero-mail .rg-point{width:6px;height:6px;border-radius:50%;background:#43A047;flex-shrink:0;}
-.rg-hero-mail.hors .rg-point{background:#B3A9C9;}
 
-.rg-hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;}
+/* les trois repères : même verre teinté que les macros du récapitulatif */
+.rg-hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:18px;}
 .rg-stat{
-  border-radius:17px;padding:12px 4px;
-  background:rgba(255,255,255,.42);
-  border:1px solid rgba(255,255,255,.6);
-  backdrop-filter:blur(10px) saturate(150%);-webkit-backdrop-filter:blur(10px) saturate(150%);
+  border-radius:18px;padding:12px 6px;border:none;
+  background:rgba(123,79,224,.14);
+  backdrop-filter:blur(12px) saturate(170%);-webkit-backdrop-filter:blur(12px) saturate(170%);
 }
-html.sombre .rg-stat{background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.12);}
+html.sombre .rg-stat{background:rgba(169,141,240,.16);}
 .rg-stat b{display:block;font-family:var(--police-titre);font-size:18px;line-height:1.1;color:#1C1730;}
 .rg-stat span{display:block;font-size:10.5px;color:#8A82A0;margin-top:3px;}
 html.sombre .rg-stat b{color:#EDECF4;}
@@ -3385,8 +3296,9 @@ html.sombre .rg-stat span{color:#AAA5B7;}
   color:#8A82A0;margin:0 0 9px 6px;
 }
 html.sombre .rg-section-titre{color:#9C95AE;}
-.rg-carte{padding:6px 16px;}
-.rg-carte-plein{padding:18px 16px;}
+/* une carte qui n'empile que des lignes se resserre : chaque ligne a déjà sa
+   propre respiration verticale */
+.rg-carte{padding:4px 16px;}
 
 /* --- lignes --- */
 .rg-ligne{
@@ -3402,12 +3314,12 @@ button.rg-ligne:active{opacity:.55;}
 .rg-ico{
   width:34px;height:34px;flex-shrink:0;border-radius:11px;
   display:flex;align-items:center;justify-content:center;color:#6B3FC4;
-  background:rgba(123,79,224,.14);border:1px solid rgba(123,79,224,.14);
+  background:rgba(123,79,224,.14);
 }
 .rg-ico svg{width:18px;height:18px;}
-html.sombre .rg-ico{color:#C0A6FF;background:rgba(169,141,240,.16);border-color:rgba(169,141,240,.18);}
-.rg-ico.danger{color:#C62A2F;background:rgba(198,42,47,.11);border-color:rgba(198,42,47,.14);}
-html.sombre .rg-ico.danger{color:#E48184;background:rgba(228,129,132,.14);border-color:rgba(228,129,132,.18);}
+html.sombre .rg-ico{color:#C0A6FF;background:rgba(169,141,240,.16);}
+.rg-ico.danger{color:#C62A2F;background:rgba(198,42,47,.11);}
+html.sombre .rg-ico.danger{color:#E48184;background:rgba(228,129,132,.14);}
 .rg-txt{flex:1;min-width:0;}
 .rg-txt b{display:block;font-size:14.5px;font-weight:700;line-height:1.25;}
 .rg-txt span{display:block;font-size:12px;color:#8A82A0;margin-top:2px;line-height:1.35;}
@@ -3422,95 +3334,76 @@ html.sombre .rg-chev{color:#8B84A0;}
 .rg-ligne.danger .rg-txt b{color:#C62A2F;}
 html.sombre .rg-ligne.danger .rg-txt b{color:#E48184;}
 
-/* --- champs des objectifs --- */
-.rg-champs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.rg-champ{display:block;}
-.rg-champ.large{grid-column:1 / -1;}
-.rg-champ > span{
-  display:block;font-size:11.5px;font-weight:700;color:#8A82A0;margin:0 0 5px 2px;
-}
-html.sombre .rg-champ > span{color:#AAA5B7;}
-.rg-champ input{
-  width:100%;font-family:var(--police);font-size:16px;font-weight:700;color:#1C1730;
-  padding:12px 13px;border-radius:15px;
-  background:rgba(255,255,255,.55);
-  border:1px solid rgba(255,255,255,.75);
-  backdrop-filter:blur(10px) saturate(150%);-webkit-backdrop-filter:blur(10px) saturate(150%);
-  transition:border-color .15s ease, box-shadow .15s ease;
-}
-.rg-champ input:focus{
-  outline:none;border-color:rgba(123,79,224,.6);box-shadow:0 0 0 3px rgba(123,79,224,.18);
-}
-html.sombre .rg-champ input{
-  background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);color:#EDECF4;
-}
-html.sombre .rg-champ input:focus{border-color:rgba(169,141,240,.7);box-shadow:0 0 0 3px rgba(169,141,240,.22);}
-
-.rg-actions{display:flex;flex-direction:column;gap:9px;margin-top:16px;}
-.rg-btn{
-  width:100%;border-radius:999px;padding:13px;font-family:var(--police);
-  font-size:14.5px;font-weight:700;cursor:pointer;border:none;
-  transition:transform .15s cubic-bezier(.34,1.4,.64,1), opacity .15s ease;
-}
-.rg-btn:active{transform:scale(.98);}
-.rg-btn-plein{background:#7B4FE0;color:#fff;box-shadow:0 10px 24px -12px rgba(123,79,224,.9);}
-.rg-btn-verre{
-  background:rgba(255,255,255,.42);color:#6B3FC4;
-  border:1px solid rgba(255,255,255,.7);
-  backdrop-filter:blur(12px) saturate(160%);-webkit-backdrop-filter:blur(12px) saturate(160%);
-}
-html.sombre .rg-btn-verre{background:rgba(255,255,255,.085);color:#C0A6FF;border-color:rgba(255,255,255,.15);}
+/* --- objectifs : les champs de saisie de l'app, sur deux colonnes --- */
+.rg-champs{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.rg-champs .field{margin-bottom:0;}
+.rg-champs .field.large{grid-column:1 / -1;}
+/* le bouton n'apparaît qu'une fois une valeur changée : sans ça, il invite à
+   enregistrer ce qui est déjà enregistré */
+.rg-enregistrer{margin-top:16px;}
 
 /* --- interrupteur --- */
 .rg-switch{
-  appearance:none;-webkit-appearance:none;flex-shrink:0;
+  appearance:none;-webkit-appearance:none;flex-shrink:0;margin:0;
   width:50px;height:30px;border-radius:999px;position:relative;cursor:pointer;
-  background:rgba(28,23,48,.16);border:1px solid rgba(255,255,255,.5);
-  transition:background .2s ease;
+  background:#DCD5EC;transition:background .2s ease;
 }
 .rg-switch::after{
-  content:'';position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;
-  background:#fff;box-shadow:0 2px 6px rgba(28,23,48,.32);
+  content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+  background:#FFFFFF;box-shadow:0 2px 5px rgba(28,23,48,.2);
   transition:transform .22s cubic-bezier(.34,1.4,.64,1);
 }
-.rg-switch:checked{background:#7B4FE0;border-color:rgba(123,79,224,.5);}
+.rg-switch:checked{background:#7B4FE0;}
 .rg-switch:checked::after{transform:translateX(20px);}
 .rg-switch:focus-visible{outline:3px solid rgba(123,79,224,.45);outline-offset:2px;}
-html.sombre .rg-switch{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.14);}
-html.sombre .rg-switch:checked{background:#7B4FE0;}
+html.sombre .rg-switch{background:rgba(255,255,255,.16);}
+html.sombre .rg-switch::after{background:#FFFFFF;box-shadow:0 2px 5px rgba(0,0,0,.35);}
 
-.rg-version{
-  text-align:center;font-size:11px;color:#8A82A0;margin:22px 0 0;
-}
+.rg-version{text-align:center;font-size:11px;color:#8A82A0;margin:22px 0 0;}
 html.sombre .rg-version{color:#7E7691;}
 
-/* --- petit menu de la photo --- */
-.rg-menu-fond{
+/* --- petites fenêtres : photo de profil, pseudo --- */
+.rg-fenetre-fond{
   position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;
   background:rgba(28,23,48,.42);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   animation:sheetFadeIn .2s ease;transition:opacity .18s ease;
 }
-html.sombre .rg-menu-fond{background:rgba(10,6,20,.62);}
-.rg-menu-fond.sortie{opacity:0;}
-.rg-menu-boite{
-  width:100%;max-width:320px;text-align:left;padding:4px 16px 14px;
+html.sombre .rg-fenetre-fond{background:rgba(10,6,20,.62);}
+.rg-fenetre-fond.sortie{opacity:0;}
+.rg-fenetre{
+  width:100%;max-width:320px;margin-bottom:0;text-align:left;
   font-family:var(--police);
   animation:confirmPop .22s cubic-bezier(.34,1.56,.64,1);
 }
-.rg-menu-titre{
+.rg-fenetre-liste{padding:4px 16px 14px;}
+.rg-fenetre-titre{
   font-family:var(--police-titre);font-size:16px;color:#1C1730;
-  padding:16px 2px 6px;text-align:center;
+  padding:12px 2px 8px;text-align:center;
 }
-html.sombre .rg-menu-titre{color:#EDECF4;}
-.rg-menu-boite .rg-ligne:last-child{border-bottom:none;}
-.rg-menu-annuler{
-  width:100%;margin-top:12px;border:none;border-radius:999px;padding:12px;
+html.sombre .rg-fenetre-titre{color:#EDECF4;}
+.rg-fenetre .rg-ligne:last-child{border-bottom:none;}
+/* Une fenêtre est posée sur <body>, donc hors du conteneur qui porte
+   .repas-theme : elle n'hérite ni des champs ni des boutons de l'app. On les
+   lui redonne ici, à l'identique, pour qu'elle en ait l'air. */
+.rg-fenetre .field label{color:#8A82A0;}
+.rg-fenetre .field input{border-color:#DCC6F2;background:rgba(255,255,255,.55);color:#1C1730;}
+.rg-fenetre .field input:focus{border-color:#7B4FE0;background:#fff;box-shadow:0 0 0 3px rgba(123,79,224,.16);}
+.rg-fenetre .btn-primary{background:#7B4FE0;color:#fff;}
+/* « html.sombre .btn-primary » pèse une classe de plus que le sélecteur
+   ci-dessus : sans ce jumeau, le bouton repasserait en blanc la nuit. */
+html.sombre .rg-fenetre .btn-primary{background:#7B4FE0;color:#fff;}
+html.sombre .rg-fenetre .field label{color:#AAA5B7;}
+html.sombre .rg-fenetre .field input{border-color:#47335B;background:rgba(46,37,72,.705);color:#EDECF4;}
+html.sombre .rg-fenetre .field input:focus{border-color:#7B4FE0;background:#2E2548;box-shadow:0 0 0 3px rgba(0,0,0,.208);}
+
+.rg-fenetre-annuler{
+  width:100%;margin-top:10px;border:none;border-radius:999px;padding:12px;
   font-family:var(--police);font-size:14px;font-weight:700;cursor:pointer;
   background:rgba(123,79,224,.13);color:#6B3FC4;
 }
-html.sombre .rg-menu-annuler{background:rgba(169,141,240,.16);color:#C0A6FF;}
-@media (prefers-reduced-motion: reduce){ .rg-menu-fond,.rg-menu-boite{animation:none;} }
+html.sombre .rg-fenetre-annuler{background:rgba(169,141,240,.16);color:#C0A6FF;}
+@media (prefers-reduced-motion: reduce){ .rg-fenetre-fond,.rg-fenetre{animation:none;} }
 
 @media (max-width:360px){
   .rg-champs{grid-template-columns:1fr;}
@@ -3534,17 +3427,19 @@ const ICONS = {
   plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
   camera: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.4-2h5.8l1.4 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9Z"/><circle cx="12" cy="12.8" r="3.4"/></svg>`,
   galerie: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.7"/><path d="m20.5 16-4.8-4.8L6 19.5"/></svg>`,
-  corps: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.6" r="2.1"/><path d="M12 8.2c-2.6 0-4 1.3-4 3.3v2.1M12 8.2c2.6 0 4 1.3 4 3.3v2.1"/><path d="M9.4 13.6 8.6 20.5M14.6 13.6l.8 6.9"/></svg>`,
-  feu: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2c3.3 3.9 5.5 6.6 5.5 9.6a5.5 5.5 0 0 1-11 0c0-1.6.6-3 1.7-4.3.3 1.4 1 2.4 2 2.9-.5-3.2.3-5.8 1.8-8.2Z"/></svg>`,
+  pleinCible: `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2.8a9.2 9.2 0 1 0 0 18.4 9.2 9.2 0 0 0 0-18.4Zm0 2.7a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13Z"/><path fill-rule="evenodd" d="M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm0 2.7a1.8 1.8 0 1 1 0 3.6 1.8 1.8 0 0 1 0-3.6Z"/></svg>`,
+  pleinCorps: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.7" r="2.6"/><path d="M12 8.5c-2.9 0-4.7 1.5-4.7 3.8v2a1.1 1.1 0 0 0 2.2 0v-1.5l-.5 7.1a1.2 1.2 0 0 0 2.4.1l.6-4.4.6 4.4a1.2 1.2 0 0 0 2.4-.1l-.5-7.1v1.5a1.1 1.1 0 0 0 2.2 0v-2c0-2.3-1.8-3.8-4.7-3.8Z"/></svg>`,
+  pleinBoussole: `<svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 2.6a9.4 9.4 0 1 0 0 18.8 9.4 9.4 0 0 0 0-18.8Zm4.3 4.5-2 5.6a1.4 1.4 0 0 1-.9.9l-5.6 2a.6.6 0 0 1-.8-.8l2-5.6a1.4 1.4 0 0 1 .9-.9l5.6-2a.6.6 0 0 1 .8.8Z"/></svg>`,
+  pleinHaltere: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="1.6" y="9.4" width="2.5" height="5.2" rx="1.1"/><rect x="4.9" y="6.8" width="3.3" height="10.4" rx="1.3"/><rect x="8.2" y="10.6" width="7.6" height="2.8"/><rect x="15.8" y="6.8" width="3.3" height="10.4" rx="1.3"/><rect x="19.9" y="9.4" width="2.5" height="5.2" rx="1.1"/></svg>`,
+  pleinFlamme: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c3.4 4.2 5.8 7 5.8 10.2a5.8 5.8 0 0 1 -11.6 0c0 -1.6 .6 -3 1.7 -4.4c.3 1.4 1 2.4 2 2.9c-.5 -3.3 .2 -6 2.1 -8.7z"/></svg>`,
+  pleinPseudo: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.1"/><path d="M12 13.6c-4 0-7.2 2.2-7.2 5v.9a1 1 0 0 0 1 1h12.4a1 1 0 0 0 1-1v-.9c0-2.8-3.2-5-7.2-5Z"/></svg>`,
   crayon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.9a2.1 2.1 0 0 1 3 3L8.1 18.3l-4 1 1-4 11.4-11.4Z"/></svg>`,
   corbeille: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 19a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12.5"/><path d="M10.5 10.5v6M13.5 10.5v6"/></svg>`,
   chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>`,
-  cible: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/></svg>`,
   lune: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.4 8.4 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2Z"/></svg>`,
   cle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M18 12v3.2M15.2 12v2.4"/></svg>`,
   enveloppe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="m3.8 7.2 7.1 5.2a2 2 0 0 0 2.2 0l7.1-5.2"/></svg>`,
   sortie: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M10 8.5 6.5 12 10 15.5M6.8 12H15"/></svg>`,
-  boussole: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="m15.2 8.8-1.7 4.7-4.7 1.7 1.7-4.7 4.7-1.7Z"/></svg>`,
   gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.1.32.27.61.5.85.24.24.53.4.85.5H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
 };
 
@@ -8957,9 +8852,9 @@ function renderRecettes(){
 
 /* ---------------- Espace compte ----------------
    L'écran rassemble tout ce qui appartient à la personne : sa photo, son
-   prénom, son compte, son profil sportif et ses objectifs. Les cartes sont en
-   verre (voir la feuille « compte-glass ») et se posent sur les halos de
-   couleur que pose .rg-aurora : sans eux, le flou n'aurait rien à filtrer. */
+   pseudo, son compte, son profil sportif et ses objectifs. Les cartes sont
+   celles du reste de l'app (.recap-card) ; la feuille « compte-espace » ne
+   règle que ce qui leur manque ici. */
 
 const AVATAR_TAILLE = 320;    // côté de la photo enregistrée, en pixels
 const AVATAR_POIDS_MAX = 900000; // ~900 ko de data URL : au-delà on refuse
@@ -9028,9 +8923,9 @@ async function supprimerAvatar(){
 function ouvrirMenuAvatar(choisir){
   if (document.getElementById('avatarMenu')) return;
   document.body.insertAdjacentHTML('beforeend', `
-    <div class="rg-menu-fond" id="avatarMenu">
-      <div class="lg rg-menu-boite" role="dialog" aria-modal="true" aria-labelledby="avatarMenuTitre">
-        <div class="rg-menu-titre" id="avatarMenuTitre">Photo de profil</div>
+    <div class="rg-fenetre-fond" id="avatarMenu">
+      <div class="recap-card rg-fenetre rg-fenetre-liste" role="dialog" aria-modal="true" aria-labelledby="avatarMenuTitre">
+        <div class="rg-fenetre-titre" id="avatarMenuTitre">Photo de profil</div>
         <button class="rg-ligne" id="avatarChanger">
           <span class="rg-ico">${ICONS.galerie}</span>
           <span class="rg-txt"><b>Changer la photo</b><span>Choisir une autre image</span></span>
@@ -9039,7 +8934,7 @@ function ouvrirMenuAvatar(choisir){
           <span class="rg-ico danger">${ICONS.corbeille}</span>
           <span class="rg-txt"><b>Retirer la photo</b><span>Revenir à l’initiale</span></span>
         </button>
-        <button class="rg-menu-annuler" id="avatarAnnuler">Annuler</button>
+        <button class="rg-fenetre-annuler" id="avatarAnnuler">Annuler</button>
       </div>
     </div>`);
   const fond = document.getElementById('avatarMenu');
@@ -9070,6 +8965,56 @@ async function demanderChangementMotDePasse(){
   } catch(e){ showToast(messageHumain(e)); }
 }
 
+/* Le pseudo se change depuis l'espace compte : c'est le nom qui accueille sur
+   l'écran d'accueil et en tête de cet écran. */
+function ouvrirPseudo(){
+  if (document.getElementById('pseudoFenetre')) return;
+  const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const actuel = state.userName || '';
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="rg-fenetre-fond" id="pseudoFenetre">
+      <div class="recap-card rg-fenetre" role="dialog" aria-modal="true" aria-labelledby="pseudoTitre">
+        <div class="rg-fenetre-titre" id="pseudoTitre">Mon pseudo</div>
+        <div class="field">
+          <label for="pseudoChamp">Comment on t’appelle ?</label>
+          <input id="pseudoChamp" type="text" maxlength="20" autocomplete="nickname" value="${esc(actuel)}">
+        </div>
+        <button class="btn-primary" id="pseudoValider">Enregistrer</button>
+        <button class="rg-fenetre-annuler" id="pseudoAnnuler">Annuler</button>
+      </div>
+    </div>`);
+  const fond = document.getElementById('pseudoFenetre');
+  const champ = document.getElementById('pseudoChamp');
+  const valider = document.getElementById('pseudoValider');
+  const surEchap = ev => { if (ev.key === 'Escape') fermer(); };
+  function fermer(){
+    document.removeEventListener('keydown', surEchap);
+    fond.classList.add('sortie');
+    setTimeout(() => fond.remove(), 180);
+  }
+  // rien à enregistrer tant que le pseudo est vide ou inchangé
+  const majValider = () => { valider.disabled = !champ.value.trim() || champ.value.trim() === actuel; };
+  majValider();
+  champ.addEventListener('input', majValider);
+  champ.addEventListener('keydown', ev => { if (ev.key === 'Enter' && !valider.disabled) enregistrer(); });
+
+  async function enregistrer(){
+    const nom = champ.value.trim();
+    if (!nom) return;
+    state.userName = nom;
+    fermer();
+    render();
+    try { await window.storage.set('user-name', nom, true); showToast('Pseudo enregistré'); }
+    catch(e){ showToast('Erreur de sauvegarde'); }
+  }
+  valider.onclick = enregistrer;
+  document.getElementById('pseudoAnnuler').onclick = fermer;
+  fond.onclick = ev => { if (ev.target === fond) fermer(); };
+  document.addEventListener('keydown', surEchap);
+  champ.focus();
+  champ.select();
+}
+
 function renderReglages(){
   const goals = state.macroGoals || {};
   const b = state.body || {};
@@ -9092,109 +9037,102 @@ function renderReglages(){
       ${valeur ? `<span class="rg-val">${valeur}</span>` : ''}
     </div>`;
 
-  const bouton = (id, icone, titre, sous, danger) => `
+  const bouton = (id, icone, titre, sous, valeur, danger) => `
     <button class="rg-ligne ${danger ? 'danger' : ''}" id="${id}">
       <span class="rg-ico ${danger ? 'danger' : ''}">${icone}</span>
       <span class="rg-txt"><b>${titre}</b>${sous ? `<span>${sous}</span>` : ''}</span>
+      ${valeur ? `<span class="rg-val">${valeur}</span>` : ''}
       <span class="rg-chev">${ICONS.chevron}</span>
     </button>`;
 
   // profil sportif : on n'affiche que ce qui est renseigné
   const profilLignes = b.poids ? [
-    o    ? ligne(ICONS.cible,    'Objectif',      pace ? `Rythme ${pace.label.toLowerCase()}` : '', esc(o.label)) : '',
-    bf != null ? ligne(ICONS.corps, 'Composition', `${leanBodyMass(b).toFixed(1)} kg de masse maigre`, `${Math.round(bf*100)} % de gras`) : '',
-    neat ? ligne(ICONS.boussole, 'Activité',      esc(neat.sub), esc(neat.label)) : '',
-    freq ? ligne(ICONS.chart,    'Entraînement',  b.entrainementType ? esc(b.entrainementType) : '', `${esc(freq.label)} / sem.`) : '',
-    tdee ? ligne(ICONS.feu, 'Maintien estimé', 'Ce que tu brûles sans rien changer', `${tdee} kcal`) : '',
+    o          ? ligne(ICONS.pleinCible,    'Objectif',     pace ? `Rythme ${pace.label.toLowerCase()}` : '', esc(o.label)) : '',
+    bf != null ? ligne(ICONS.pleinCorps,    'Composition',  `${leanBodyMass(b).toFixed(1)} kg de masse maigre`, `${Math.round(bf*100)} % de gras`) : '',
+    neat       ? ligne(ICONS.pleinBoussole, 'Activité',     esc(neat.sub), esc(neat.label)) : '',
+    freq       ? ligne(ICONS.pleinHaltere,  'Entraînement', b.entrainementType ? esc(b.entrainementType) : '', `${esc(freq.label)} / sem.`) : '',
+    tdee       ? ligne(ICONS.pleinFlamme,   'Maintien estimé', 'Ce que tu brûles sans rien changer', `${tdee} kcal`) : '',
   ].filter(Boolean).join('') : '';
 
   const avatarInterieur = state.avatar
     ? `<img src="${state.avatar}" alt="Photo de profil de ${esc(prenom)}">`
     : `<span class="rg-avatar-initiale">${esc(initials(prenom))}</span>`;
 
+  const champ = (id, libelle, valeur, large) => `
+    <div class="field ${large ? 'large' : ''}">
+      <label for="${id}">${libelle}</label>
+      <input id="${id}" type="number" inputmode="numeric" value="${esc(valeur || '')}">
+    </div>`;
+
   app.innerHTML = `
-    <div class="rg-aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    <div class="screen-content rg-espace ${consumeFadeClass()}">
+    <div class="screen-content ${consumeFadeClass()}">
+    <div class="repas-top"><h1>🐲 Mon compte</h1></div>
 
-      <div class="rg-entete"><h1>Mon compte</h1></div>
-
-      <div class="lg rg-hero">
-        <div class="rg-avatar-zone">
-          <button class="rg-avatar" id="rg_avatar"
-                  aria-label="${state.avatar ? 'Modifier ma photo de profil' : 'Ajouter une photo de profil'}">
-            <span class="rg-avatar-anneau"></span>
-            <span class="rg-avatar-disque">${avatarInterieur}</span>
-            <span class="rg-avatar-badge">${state.avatar ? ICONS.crayon : ICONS.camera}</span>
-          </button>
-        </div>
-        <input type="file" id="rg_avatar_fichier" accept="image/*" hidden>
-        <h2 class="rg-hero-nom">${esc(prenom)}</h2>
-        ${email
-          ? `<div class="rg-hero-mail"><span class="rg-point"></span>${esc(email)}</div>`
-          : `<div class="rg-hero-mail hors"><span class="rg-point"></span>Suivi gardé sur cet appareil</div>`}
-        <div class="rg-hero-stats">
-          <div class="rg-stat"><b>${b.poids != null ? `${b.poids} kg` : '—'}</b><span>Poids</span></div>
-          <div class="rg-stat"><b>${serie}</b><span>Jour${serie > 1 ? 's' : ''} de suite</span></div>
-          <div class="rg-stat"><b>${goals.calories || '—'}</b><span>kcal / jour</span></div>
-        </div>
+    <div class="recap-card rg-hero">
+      <div class="rg-avatar-zone">
+        <button class="rg-avatar" id="rg_avatar"
+                aria-label="${state.avatar ? 'Modifier ma photo de profil' : 'Ajouter une photo de profil'}">
+          <span class="rg-avatar-anneau"></span>
+          <span class="rg-avatar-disque">${avatarInterieur}</span>
+          <span class="rg-avatar-badge">${state.avatar ? ICONS.crayon : ICONS.camera}</span>
+        </button>
       </div>
-
-      ${profilLignes ? `
-      <div class="rg-section">
-        <div class="rg-section-titre">Mon profil</div>
-        <div class="lg rg-carte">${profilLignes}</div>
-        <div class="rg-actions">
-          <button class="rg-btn rg-btn-verre" id="rg_redo">Refaire le questionnaire</button>
-        </div>
-      </div>` : ''}
-
-      <div class="rg-section">
-        <div class="rg-section-titre">Objectifs du jour</div>
-        <div class="lg rg-carte-plein">
-          <div class="rg-champs">
-            <label class="rg-champ large"><span>Prénom</span>
-              <input id="rg_name" type="text" value="${esc(state.userName || '')}" maxlength="20"></label>
-            <label class="rg-champ large"><span>Calories (kcal)</span>
-              <input id="rg_cal" type="number" inputmode="numeric" value="${esc(goals.calories || '')}"></label>
-            <label class="rg-champ"><span>Protéines (g)</span>
-              <input id="rg_prot" type="number" inputmode="numeric" value="${esc(goals.proteines || '')}"></label>
-            <label class="rg-champ"><span>Glucides (g)</span>
-              <input id="rg_carb" type="number" inputmode="numeric" value="${esc(goals.glucides || '')}"></label>
-            <label class="rg-champ large"><span>Lipides (g)</span>
-              <input id="rg_fat" type="number" inputmode="numeric" value="${esc(goals.lipides || '')}"></label>
-          </div>
-          <div class="rg-actions">
-            <button class="rg-btn rg-btn-plein" id="rg_save">Enregistrer</button>
-            ${b.poids ? `<button class="rg-btn rg-btn-verre" id="rg_recompute">Recalculer depuis mon profil</button>` : ''}
-          </div>
-        </div>
+      <input type="file" id="rg_avatar_fichier" accept="image/*" hidden>
+      <h2 class="rg-hero-nom">${esc(prenom)}</h2>
+      <div class="rg-hero-stats">
+        <div class="rg-stat"><b>${b.poids != null ? `${b.poids} kg` : '—'}</b><span>Poids</span></div>
+        <div class="rg-stat"><b>${serie}</b><span>Jour${serie > 1 ? 's' : ''} de suite</span></div>
+        <div class="rg-stat"><b>${goals.calories || '—'}</b><span>kcal / jour</span></div>
       </div>
+    </div>
 
-      <div class="rg-section">
-        <div class="rg-section-titre">Apparence</div>
-        <div class="lg rg-carte">
-          <label class="rg-ligne" for="rg_sombre">
-            <span class="rg-ico">${ICONS.lune}</span>
-            <span class="rg-txt"><b>Mode sombre</b><span>Fond foncé, plus doux le soir</span></span>
-            <input type="checkbox" role="switch" class="rg-switch" id="rg_sombre" ${state.sombre ? 'checked' : ''}>
-          </label>
+    ${profilLignes ? `
+    <div class="rg-section">
+      <div class="rg-section-titre">Mon profil</div>
+      <div class="recap-card rg-carte">${profilLignes}</div>
+      <button class="btn-secondary" id="rg_redo">Refaire le questionnaire</button>
+    </div>` : ''}
+
+    <div class="rg-section">
+      <div class="rg-section-titre">Objectifs du jour</div>
+      <div class="recap-card">
+        <div class="rg-champs">
+          ${champ('rg_cal',  'Calories (kcal)', goals.calories, true)}
+          ${champ('rg_prot', 'Protéines (g)',   goals.proteines)}
+          ${champ('rg_carb', 'Glucides (g)',    goals.glucides)}
+          ${champ('rg_fat',  'Lipides (g)',     goals.lipides, true)}
         </div>
+        <button class="btn-primary rg-enregistrer" id="rg_save" hidden>Enregistrer</button>
+        ${b.poids ? `<button class="btn-secondary" id="rg_recompute">Recalculer depuis mon profil</button>` : ''}
       </div>
+    </div>
 
-      <div class="rg-section">
-        <div class="rg-section-titre">Compte</div>
-        <div class="lg rg-carte">
-          ${email ? `
-            ${ligne(ICONS.enveloppe, 'Adresse e-mail', 'Sert à retrouver ton suivi', esc(email))}
-            ${bouton('rg_mdp', ICONS.cle, 'Changer mon mot de passe', 'Un lien t’est envoyé par e-mail')}
-            ${bouton('rg_logout', ICONS.sortie, 'Se déconnecter', 'Ton suivi reste en ligne', true)}
-          ` : `
-            ${bouton('rg_creer', ICONS.enveloppe, 'Créer mon compte', 'Pour retrouver ton suivi partout')}
-          `}
-        </div>
+    <div class="rg-section">
+      <div class="rg-section-titre">Apparence</div>
+      <div class="recap-card rg-carte">
+        <label class="rg-ligne" for="rg_sombre">
+          <span class="rg-ico">${ICONS.lune}</span>
+          <span class="rg-txt"><b>Mode sombre</b><span>Fond foncé, plus doux le soir</span></span>
+          <input type="checkbox" role="switch" class="rg-switch" id="rg_sombre" ${state.sombre ? 'checked' : ''}>
+        </label>
       </div>
+    </div>
 
-      <p class="rg-version">Version du 15/09/2026 10:05 UTC</p>
+    <div class="rg-section">
+      <div class="rg-section-titre">Compte</div>
+      <div class="recap-card rg-carte">
+        ${bouton('rg_pseudo', ICONS.pleinPseudo, 'Pseudo', 'Le nom qui t’accueille sur l’app', esc(state.userName || 'À choisir'))}
+        ${email ? `
+          ${ligne(ICONS.enveloppe, 'Adresse e-mail', 'Sert à retrouver ton suivi', esc(email))}
+          ${bouton('rg_mdp', ICONS.cle, 'Changer mon mot de passe', 'Un lien t’est envoyé par e-mail')}
+          ${bouton('rg_logout', ICONS.sortie, 'Se déconnecter', 'Ton suivi reste en ligne', '', true)}
+        ` : `
+          ${bouton('rg_creer', ICONS.enveloppe, 'Créer mon compte', 'Pour retrouver ton suivi partout')}
+        `}
+      </div>
+    </div>
+
+    <p class="rg-version">Version du 15/09/2026 10:05 UTC</p>
     </div>
   ` + bottomNavHtml('reglages');
 
@@ -9212,6 +9150,31 @@ function renderReglages(){
     if (state.avatar) ouvrirMenuAvatar(choisirFichier); else choisirFichier();
   };
 
+  /* ----- objectifs : le bouton n'apparaît qu'une fois une valeur changée ----- */
+  const lireObjectifs = () => ({
+    calories: parseFloat(document.getElementById('rg_cal').value) || goals.calories || 2000,
+    proteines: parseFloat(document.getElementById('rg_prot').value) || goals.proteines || 0,
+    glucides: parseFloat(document.getElementById('rg_carb').value) || goals.glucides || 0,
+    lipides: parseFloat(document.getElementById('rg_fat').value) || goals.lipides || 0,
+  });
+  const saveBtn = document.getElementById('rg_save');
+  // repère pris juste après le rendu : les champs valent alors ce qui est enregistré
+  const repere = JSON.stringify(lireObjectifs());
+  const majBoutonSave = () => { saveBtn.hidden = JSON.stringify(lireObjectifs()) === repere; };
+  ['rg_cal','rg_prot','rg_carb','rg_fat'].forEach(id => {
+    document.getElementById(id).addEventListener('input', majBoutonSave);
+  });
+
+  saveBtn.onclick = async () => {
+    const newGoals = lireObjectifs();
+    state.macroGoals = newGoals;
+    try {
+      await window.storage.set('goals', JSON.stringify(newGoals), true);
+      showToast('Enregistré');
+    } catch(e){ showToast('Erreur de sauvegarde'); }
+    render();
+  };
+
   /* ----- apparence ----- */
   const sombreInput = document.getElementById('rg_sombre');
   if (sombreInput) sombreInput.onchange = async () => {
@@ -9222,6 +9185,7 @@ function renderReglages(){
   };
 
   /* ----- compte ----- */
+  document.getElementById('rg_pseudo').onclick = ouvrirPseudo;
   const logoutBtn = document.getElementById('rg_logout');
   if (logoutBtn) logoutBtn.onclick = seDeconnecter;
   const creerBtn = document.getElementById('rg_creer');
@@ -9269,24 +9233,6 @@ function renderReglages(){
       render();
     };
   }
-
-  document.getElementById('rg_save').onclick = async () => {
-    const name = document.getElementById('rg_name').value.trim();
-    const newGoals = {
-      calories: parseFloat(document.getElementById('rg_cal').value) || goals.calories || 2000,
-      proteines: parseFloat(document.getElementById('rg_prot').value) || goals.proteines || 0,
-      glucides: parseFloat(document.getElementById('rg_carb').value) || goals.glucides || 0,
-      lipides: parseFloat(document.getElementById('rg_fat').value) || goals.lipides || 0,
-    };
-    state.macroGoals = newGoals;
-    if (name) state.userName = name;
-    try {
-      await window.storage.set('goals', JSON.stringify(newGoals), true);
-      if (name) await window.storage.set('user-name', name, true);
-      showToast('Enregistré');
-    } catch(e){ showToast('Erreur de sauvegarde'); }
-    render();
-  };
 }
 
 /* ---------------- photo du repas : Brioche reconnaît l'assiette ----------------
