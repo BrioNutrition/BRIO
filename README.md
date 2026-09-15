@@ -13,6 +13,12 @@ En ligne, chaque personne a un compte et retrouve son suivi sur tous ses
 appareils. Les comptes et les données sont gérés par Supabase ; le schéma de la
 base et les règles d'accès sont dans `supabase/schema.sql`.
 
+L'écran *Mon compte* rassemble la photo de profil, le prénom, l'adresse du
+compte, le profil sportif et les objectifs du jour. La photo est recadrée en
+carré et réduite à 320 px sur l'appareil avant d'être enregistrée comme
+n'importe quelle autre donnée du compte : elle suit donc la personne d'un
+appareil à l'autre, sans stockage de fichiers à part.
+
 Chacun ne peut lire et écrire que ses propres données : c'est garanti par les
 règles RLS de Supabase, côté serveur. La clé présente dans `index.html` est la
 clé publique du projet, prévue pour être visible dans une app web.
