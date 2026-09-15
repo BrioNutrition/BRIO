@@ -1713,21 +1713,49 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .weight-sheet .progress-square-label{color:#1C1730;}
   .weight-panel-header{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
   .weight-more-wrap{position:absolute;right:0;top:50%;transform:translateY(-50%);}
+  /* Les trois points et leur menu : même verre que les cases de la feuille.
+     Les points sont dessinés en SVG et non écrits « ⋯ » : le caractère se
+     centrait mal et demandait un décalage bricolé au pixel près. */
   .weight-more-btn{
-    width:28px;height:28px;border-radius:50%;border:1.5px solid #DCC6F2;
-    background:rgba(255,255,255,.6);color:#1C1730;font-size:16px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;line-height:1;padding:0 0 6px;
+    width:32px;height:32px;border-radius:50%;padding:0;color:#1C1730;
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s ease, border-color .2s ease, transform .18s cubic-bezier(.34,1.4,.64,1);
   }
+  .weight-more-btn svg{width:16px;height:16px;display:block;}
+  .weight-more-btn:active{transform:scale(.92);}
+  /* menu ouvert : le bouton reste enfoncé, on voit d'où vient le panneau */
+  .weight-more-btn.ouvert{background:rgba(255,255,255,.85);border-color:rgba(255,255,255,.95);}
+  .weight-more-btn:focus-visible{outline:2px solid #7B4FE0;outline-offset:2px;}
+
   .weight-more-menu{
-    position:absolute;top:34px;right:0;z-index:5;min-width:190px;
-    background:#FFFFFF;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);
-    padding:6px;
+    position:absolute;top:38px;right:0;z-index:5;min-width:200px;padding:6px;
+    border-radius:var(--radius-md);
+    background:rgba(255,255,255,.95);
+    backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+    border:1px solid rgba(255,255,255,.95);
+    box-shadow:0 12px 30px rgba(28,23,48,.16);
+    transform-origin:top right;
+    animation:menuSurgit .2s cubic-bezier(.32,.72,0,1);
+  }
+  @keyframes menuSurgit{from{opacity:0;transform:translateY(-6px) scale(.94);}}
+  @media (prefers-reduced-motion: reduce){
+    .weight-more-menu{animation:sheetFadeIn .15s ease;}
+    .weight-more-btn{transition:none;}
+    .weight-more-btn:active{transform:none;}
   }
   .weight-more-menu-item{
-    display:block;width:100%;text-align:left;background:none;border:none;
-    padding:10px 12px;font-size:13.5px;font-weight:600;color:#1C1730;border-radius:8px;
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:none;border:none;border-radius:var(--radius-sm);
+    padding:11px 14px;font-size:13.5px;font-weight:600;color:#1C1730;white-space:nowrap;
+    transition:background .15s ease;
   }
-  .weight-more-menu-item:active{background:#F3EEF7;}
+  .weight-more-menu-item svg{width:16px;height:16px;flex:none;color:#7B4FE0;}
+  .weight-more-menu-item:hover,
+  .weight-more-menu-item:active{background:rgba(255,255,255,.75);}
+  .weight-more-menu-item:focus-visible{outline:2px solid #7B4FE0;outline-offset:-2px;}
   .weight-target-col{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-top:6px;}
   .weight-target-status{font-size:12px;font-weight:700;}
   .weight-target-diff{font-size:11px;font-weight:600;}
@@ -2842,10 +2870,13 @@ html.sombre .meal-block.a-remplir .meal-add{border:none;color:#fff;background:li
 html.sombre .meal-block.a-remplir.pulse .meal-row{animation:repasHalo-sombre 1.8s ease-in-out 2}
 html.sombre .weight-sheet-handle{background:#251C33}
 html.sombre .weight-sheet .progress-square-label{color:#EDECF4}
-html.sombre .weight-more-btn{border:1.5px solid #47335B;background:rgba(46,37,72,0.76);color:#EDECF4}
-html.sombre .weight-more-menu{background:#2E2548;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+html.sombre .weight-more-btn{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112);color:#EDECF4}
+html.sombre .weight-more-btn.ouvert{background:rgba(46,37,72,0.92);border-color:rgba(255,255,255,0.22)}
+html.sombre .weight-more-menu{background:rgba(38,30,60,0.975);border:1px solid rgba(255,255,255,0.13);box-shadow:0 12px 30px rgba(0,0,0,.35)}
 html.sombre .weight-more-menu-item{background:none;border:none;color:#EDECF4}
-html.sombre .weight-more-menu-item:active{background:#1D1226}
+html.sombre .weight-more-menu-item svg{color:#A98DF0}
+html.sombre .weight-more-menu-item:hover,
+html.sombre .weight-more-menu-item:active{background:rgba(255,255,255,0.09)}
 html.sombre .weight-target-over{color:#FD953D}
 html.sombre .weight-target-ok{color:#8FD6AD}
 html.sombre .weight-sheet .weight-date-label{color:#AAA5B7}
@@ -7393,6 +7424,11 @@ function poidsAnalyseRafraichir(){
   poidsAnalyseBrancher();
 }
 
+/* Trois points et petite liste : dessinés, pour rester nets et bien centrés
+   quelle que soit la police du système. */
+const ICONE_TROIS_POINTS = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>';
+const ICONE_LISTE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 4h7M6 8h7M6 12h7"/><circle cx="2.6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="12" r="1" fill="currentColor" stroke="none"/></svg>';
+
 function renderProgres(){
   // Jour de référence = le jour sélectionné dans le calendrier de l'accueil
   const viewDay = state.viewDate || todayKey();
@@ -7495,10 +7531,11 @@ function renderProgres(){
           <div class="weight-panel-header">
             <div class="weight-detail-title" style="margin-bottom:0;">Vue d'ensemble</div>
             <div class="weight-more-wrap">
-              <button class="weight-more-btn" id="weightMoreBtn">⋯</button>
+              <button class="weight-more-btn${state.showWeightMoreMenu ? ' ouvert' : ''}" id="weightMoreBtn"
+                aria-label="Plus d’options" aria-haspopup="menu" aria-expanded="${state.showWeightMoreMenu ? 'true' : 'false'}">${ICONE_TROIS_POINTS}</button>
               ${state.showWeightMoreMenu ? `
-                <div class="weight-more-menu" id="weightMoreMenu">
-                  <button class="weight-more-menu-item" id="weightHistoryMenuItem">Historique des pesées</button>
+                <div class="weight-more-menu" id="weightMoreMenu" role="menu">
+                  <button class="weight-more-menu-item" id="weightHistoryMenuItem" role="menuitem">${ICONE_LISTE}Historique des pesées</button>
                 </div>
               ` : ''}
             </div>
