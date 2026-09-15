@@ -1531,11 +1531,19 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
     padding:12px 24px 32px;box-shadow:0 -10px 30px rgba(0,0,0,.2);
     text-align:center;animation:sheetSlideUp .32s cubic-bezier(.32,.72,0,1);
   }
+  /* La vue d'ensemble du poids est bâtie comme la feuille des calories :
+     un fond dégradé opaque, sur lequel le verre des cases se détache.
+     Sur une feuille elle-même en verre blanc, les cases devenaient invisibles. */
   #weightDetailSheet{
-    min-height:94vh;max-height:94vh;display:flex;flex-direction:column;
+    min-height:94vh;max-height:94vh;
     overflow-y:auto;overscroll-behavior:contain;
+    background:linear-gradient(180deg, #E4CFF7 0%, #EDE1F5 45%, #F3EEF7 100%);
+    background-attachment:local;
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    border:1.5px solid rgba(255,255,255,.9);border-bottom:none;
   }
-  #weightDetailSheet .weight-history-list{flex:1;max-height:none;}
+  /* le voile derrière, comme pour les calories : la feuille se détache du fond */
+  #weightDetailBackdrop{background:rgba(28,23,48,.18);animation:fondApparait .25s ease;}
   .weight-detail-title{font-weight:600;font-size:15px;color:#1C1730;text-align:center;margin-bottom:14px;}
   .weight-detail-header{display:flex;justify-content:space-between;align-items:center;text-align:left;margin-bottom:14px;margin-top:6px;}
   .weight-detail-current{font-weight:700;font-size:26px;color:#1C1730;}
@@ -1696,8 +1704,11 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   }
   @media (prefers-reduced-motion: reduce){ .meal-block.a-remplir.pulse .meal-row{animation:none;} }
   .weight-sheet-handle{
-    width:40px;height:5px;border-radius:999px;background:#DDD6E8;
+    width:40px;height:5px;border-radius:999px;background:#C0B2D4;
     margin:0 auto 18px;touch-action:none;cursor:grab;
+    /* flex:none : dans une feuille en colonne flex, le contenu qui déborde
+       écrasait la barre à 0 px de haut — elle disparaissait purement et simplement */
+    flex:none;
   }
   .weight-sheet .progress-square-label{color:#1C1730;}
   .weight-panel-header{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
@@ -2106,7 +2117,7 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   .poids-analyse .stat-note{text-align:center;}
   /* le verre ne se superpose pas : posées sur une carte elle-même en verre,
      les tuiles perdaient leur relief. Elles sont donc à même la feuille. */
-  .poids-sel{margin-top:18px;}
+  .poids-sel{margin-top:18px;padding:18px;border-radius:var(--radius-lg);}
   .poids-analyse .stat-graph .ligne{stroke-width:1.8;}
   .poids-analyse .stat-graph .point{stroke-width:1.6;}
   .poids-analyse .stat-graph .halo{stroke-width:1.5;}
@@ -2962,6 +2973,8 @@ html.sombre .brioche-bulle.humeur-alerte .brioche-texte::before{background:rgba(
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte{background:rgba(36,76,47,0.632);color:#8FD6AD}
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte::before{background:rgba(36,76,47,0.632)}
 html.sombre .stat-sheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local}
+html.sombre #weightDetailSheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local;border:1.5px solid rgba(255,255,255,0.144);border-bottom:none}
+html.sombre #weightDetailBackdrop{background:rgba(28,23,48,.18)}
 html.sombre .stat-verre{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112);box-shadow:none}
 html.sombre .stat-periode.actif{background:#2E2548;box-shadow:none}
 html.sombre .stat-verre.vert{background:rgba(36,76,47,0.69);border-color:rgba(67,160,71,.45)}
@@ -3059,7 +3072,7 @@ html.sombre .photo-quota.epuise{color:#A697CE;background:rgba(123,79,224,0.16)}
 /* ---- réglages fins du mode sombre ---- */
 /* barres de fermeture des feuilles : même gris que les contours des cases
    (placé ici pour ne plus être écrasé quand le thème sombre est régénéré) */
-html.sombre .weight-sheet-handle{background:rgba(255,255,255,.114);}
+html.sombre .weight-sheet-handle{background:rgba(255,255,255,.26);}
 html.sombre{color-scheme:dark;--fond-page:#1D1226;}
 html.sombre .reg-switch::after{background:#FFFFFF;box-shadow:0 2px 5px rgba(0,0,0,.35);}
 html.sombre .reg-switch{background:rgba(255,255,255,.16);}
@@ -7325,7 +7338,7 @@ function poidsAnalyseHtml(){
       ${poidsGraphiqueSvg(serie, objectif, sel.cle, poidsFeuille.animer)}
       <div class="stat-aide">Touche un point pour le détail de ${poidsFeuille.echelle === 'jours' ? 'ce jour' : poidsFeuille.echelle === 'semaines' ? 'cette semaine' : 'ce mois'}.</div>
 
-      <div class="poids-sel">
+      <div class="poids-sel stat-verre">
         <div class="poids-sel-tete">
           <div>
             <div class="poids-sel-quand">${sel.long}</div>
