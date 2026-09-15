@@ -520,9 +520,6 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   window.addEventListener('load', () => setTimeout(() => montrer('Toujours bloqué sur « Chargement… » après 12 secondes.'), 12000));
 })();
 
-// Android / Chrome : on garde la proposition d'installation pour l'afficher dans Réglages
-window.__brioInstall = null;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.__brioInstall = e; });
 </script>
 <style>
   :root{
@@ -2317,13 +2314,6 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .weight-sheet{padding-bottom:calc(32px + env(safe-area-inset-bottom));}
   .weight-sheet.repas-prompt{padding-bottom:calc(26px + env(safe-area-inset-bottom));}
   .stat-sheet{padding-bottom:calc(34px + env(safe-area-inset-bottom));}
-  .install-carte{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:var(--radius-md);}
-  .install-icone{width:48px;height:48px;border-radius:12px;flex-shrink:0;}
-  .install-texte{margin:0;font-size:14px;line-height:1.45;color:#1C1730;font-weight:600;}
-  .install-etapes{margin:6px 0 0;font-size:13px;line-height:1.5;color:#5B5372;}
-  .install-ico{display:inline-flex;vertical-align:-3px;color:#2F7FD4;}
-  .install-ico svg{width:16px;height:16px;}
-  .install-carte .btn-secondary{margin-top:10px;padding:10px;}
 
   /* ---------- bouton + de la barre : photo du repas ---------- */
   .nav-pill-slider{width:calc((100% - 20px) / 5);}
@@ -8409,35 +8399,6 @@ function renderRecettes(){
 }
 
 /* ---------------- écran Réglages ---------------- */
-/* ---------------- Installer l'app sur l'écran d'accueil ---------------- */
-function appInstallee(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-function carteInstallationHtml(){
-  if (!window.__brioEnLigne || appInstallee()) return '';
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let consigne;
-  if (window.__brioInstall){
-    consigne = `<button class="btn-secondary" id="rg_install">Installer BRIO</button>`;
-  } else if (ios){
-    consigne = `<p class="install-etapes">Dans Safari, touche le bouton Partager <span class="install-ico" aria-hidden="true">${ICONE_PARTAGE}</span> puis « Sur l'écran d'accueil ».</p>`;
-  } else {
-    consigne = `<p class="install-etapes">Dans le menu de ton navigateur, choisis « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>`;
-  }
-  return `
-    <div class="reg-compte">
-      <div class="reg-compte-titre">Installer sur ton téléphone</div>
-      <div class="install-carte stat-verre">
-        <img src="icons/apple-touch-icon.png" alt="" class="install-icone">
-        <div>
-          <p class="install-texte">BRIO s'ouvre alors en plein écran depuis son icône, même sans connexion.</p>
-          ${consigne}
-        </div>
-      </div>
-    </div>`;
-}
-const ICONE_PARTAGE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>`;
 
 function renderReglages(){
   const goals = state.macroGoals || {};
@@ -8503,7 +8464,6 @@ function renderReglages(){
         <button class="btn-secondary" id="rg_creer">Créer mon compte</button>
       `}
     </div>
-    ${carteInstallationHtml()}
     <p style="text-align:center;color:var(--muted);font-size:11px;margin-top:18px;">Version du 08/09/2026 08:15 UTC</p>
     </div>
   ` + bottomNavHtml('reglages');
@@ -8518,15 +8478,6 @@ function renderReglages(){
     catch(e){ showToast('Erreur de sauvegarde'); }
   };
 
-  const installBtn = document.getElementById('rg_install');
-  if (installBtn) installBtn.onclick = async () => {
-    const invite = window.__brioInstall;
-    if (!invite) return;
-    invite.prompt();
-    try { await invite.userChoice; } catch(e){}
-    window.__brioInstall = null;
-    render();
-  };
 
   const logoutBtn = document.getElementById('rg_logout');
   if (logoutBtn) logoutBtn.onclick = seDeconnecter;
