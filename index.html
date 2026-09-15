@@ -520,9 +520,6 @@ try { appliquerTheme(!(window.__brioEnLigne && localStorage.getItem('brio:theme'
   window.addEventListener('load', () => setTimeout(() => montrer('Toujours bloqué sur « Chargement… » après 12 secondes.'), 12000));
 })();
 
-// Android / Chrome : on garde la proposition d'installation pour l'afficher dans Réglages
-window.__brioInstall = null;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); window.__brioInstall = e; });
 </script>
 <style>
   :root{
@@ -530,6 +527,9 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     --police:'DM Sans',sans-serif;                       /* textes courants */
     --police-titre:'DynaPuff','DM Sans',sans-serif;       /* titres et gros chiffres */
     --bg:#5121D6;
+    /* fond de la page : il suit le thème, contrairement à --bg qui sert
+       aussi de couleur de texte sur les boutons clairs */
+    --fond-page:#EDE1F5;
     --paper:#3D1C9A;
     --ink:#FFFFFF;
     --muted:#C7B9F2;
@@ -544,7 +544,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   *{box-sizing:border-box;letter-spacing:-0.01em;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--bg);
+    background:var(--fond-page);
     color:var(--ink);
     font-family:var(--police);
     font-weight:400;
@@ -556,7 +556,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     width:100%;
     max-width:460px;
     min-height:100vh;
-    background:var(--bg);
+    background:var(--fond-page);
     padding:28px 20px 60px;
     position:relative;
   }
@@ -1431,22 +1431,10 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .repas-theme .progress-square-sub.weight-objective-reached{color:#43A047;}
   .weight-kg-suffix{color:var(--muted);font-weight:500;font-size:16px;margin-left:3px;}
   .repas-theme .weight-kg-suffix{color:#8A82A0;}
-  .weight-chart-svg{width:100%;height:40px;margin-top:14px;overflow:visible;display:block;}
-  #weightDetailSheet .weight-chart-svg{height:140px;}
-  .weight-chart-line{
-    stroke:#7B4FE0;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;
-    filter:drop-shadow(0 0 3px rgba(123,79,224,.6));
-  }
-  .weight-chart-dot{
-    fill:#7B4FE0;
-    filter:drop-shadow(0 0 3px rgba(123,79,224,.95)) drop-shadow(0 0 7px rgba(123,79,224,.6));
-  }
   .weight-history-list{
     margin-top:18px;max-height:280px;overflow-y:auto;text-align:left;
   }
-  #weightHistorySheet{
-    min-height:70vh;max-height:82vh;display:flex;flex-direction:column;
-  }
+  #weightHistorySheet{display:flex;flex-direction:column;}
   .weight-history-list-full{max-height:none;margin-top:16px;flex:1;}
   .weight-history-row{
     display:flex;justify-content:space-between;padding:11px 2px;
@@ -1541,16 +1529,34 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
     padding:12px 24px 32px;box-shadow:0 -10px 30px rgba(0,0,0,.2);
     text-align:center;animation:sheetSlideUp .32s cubic-bezier(.32,.72,0,1);
   }
-  #weightDetailSheet{
-    min-height:78vh;max-height:85vh;display:flex;flex-direction:column;
+  /* La vue d'ensemble du poids est bâtie comme la feuille des calories :
+     un fond dégradé opaque, sur lequel le verre des cases se détache.
+     Sur une feuille elle-même en verre blanc, les cases devenaient invisibles. */
+  #weightDetailSheet,
+  #weightHistorySheet{
+    min-height:94vh;max-height:94vh;
+    background:linear-gradient(180deg, #E4CFF7 0%, #EDE1F5 45%, #F3EEF7 100%);
+    background-attachment:local;
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    border:1.5px solid rgba(255,255,255,.9);border-bottom:none;
   }
-  #weightDetailSheet .weight-history-list{flex:1;max-height:none;}
+  /* la vue d'ensemble défile d'un seul bloc ; l'historique garde son en-tête
+     en place et ne fait défiler que sa liste */
+  #weightDetailSheet{overflow-y:auto;overscroll-behavior:contain;}
+  /* le voile derrière, comme pour les calories : la feuille se détache du fond */
+  #weightDetailBackdrop,
+  #weightHistoryBackdrop{background:rgba(28,23,48,.18);animation:fondApparait .25s ease;}
   .weight-detail-title{font-weight:600;font-size:15px;color:#1C1730;text-align:center;margin-bottom:14px;}
   .weight-detail-header{display:flex;justify-content:space-between;align-items:center;text-align:left;margin-bottom:14px;margin-top:6px;}
   .weight-detail-current{font-weight:700;font-size:26px;color:#1C1730;}
-  .weight-detail-date{font-size:13px;color:#8A82A0;margin-top:2px;text-transform:capitalize;}
+  .weight-detail-date{font-size:13px;color:#8A82A0;margin-top:2px;}
   @keyframes sheetSlideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .weight-sheet.no-slide-anim{animation:none;}
+  /* Un clic dans une feuille ouverte redessine tout l'écran Progrès. Sans
+     ça, le voile sombre repartait de zéro à chaque fois : l'écran derrière
+     semblait clignoter alors que rien ne s'ouvrait. */
+  #weightDetailBackdrop.no-fade-anim,
+  #weightHistoryBackdrop.no-fade-anim{animation:none;}
   /* ---------- animation de série ---------- */
   .serie-fx{
     position:fixed;inset:0;z-index:60;
@@ -1705,27 +1711,58 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   }
   @media (prefers-reduced-motion: reduce){ .meal-block.a-remplir.pulse .meal-row{animation:none;} }
   .weight-sheet-handle{
-    width:40px;height:5px;border-radius:999px;background:#DDD6E8;
+    width:40px;height:5px;border-radius:999px;background:#C0B2D4;
     margin:0 auto 18px;touch-action:none;cursor:grab;
+    /* flex:none : dans une feuille en colonne flex, le contenu qui déborde
+       écrasait la barre à 0 px de haut — elle disparaissait purement et simplement */
+    flex:none;
   }
   .weight-sheet .progress-square-label{color:#1C1730;}
   .weight-panel-header{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
   .weight-more-wrap{position:absolute;right:0;top:50%;transform:translateY(-50%);}
+  /* Les trois points et leur menu : même verre que les cases de la feuille.
+     Les points sont dessinés en SVG et non écrits « ⋯ » : le caractère se
+     centrait mal et demandait un décalage bricolé au pixel près. */
   .weight-more-btn{
-    width:28px;height:28px;border-radius:50%;border:1.5px solid #DCC6F2;
-    background:rgba(255,255,255,.6);color:#1C1730;font-size:16px;font-weight:700;
-    display:flex;align-items:center;justify-content:center;line-height:1;padding:0 0 6px;
+    width:32px;height:32px;border-radius:50%;padding:0;color:#1C1730;
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s ease, border-color .2s ease, transform .18s cubic-bezier(.34,1.4,.64,1);
   }
+  .weight-more-btn svg{width:16px;height:16px;display:block;}
+  .weight-more-btn:active{transform:scale(.92);}
+  /* menu ouvert : le bouton reste enfoncé, on voit d'où vient le panneau */
+  .weight-more-btn.ouvert{background:rgba(255,255,255,.85);border-color:rgba(255,255,255,.95);}
+  .weight-more-btn:focus-visible{outline:2px solid #7B4FE0;outline-offset:2px;}
+
   .weight-more-menu{
-    position:absolute;top:34px;right:0;z-index:5;min-width:190px;
-    background:#FFFFFF;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);
-    padding:6px;
+    position:absolute;top:38px;right:0;z-index:5;min-width:200px;padding:6px;
+    border-radius:var(--radius-md);
+    background:rgba(255,255,255,.95);
+    backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+    border:1px solid rgba(255,255,255,.95);
+    box-shadow:0 12px 30px rgba(28,23,48,.16);
+    transform-origin:top right;
+    animation:menuSurgit .2s cubic-bezier(.32,.72,0,1);
+  }
+  @keyframes menuSurgit{from{opacity:0;transform:translateY(-6px) scale(.94);}}
+  @media (prefers-reduced-motion: reduce){
+    .weight-more-menu{animation:sheetFadeIn .15s ease;}
+    .weight-more-btn{transition:none;}
+    .weight-more-btn:active{transform:none;}
   }
   .weight-more-menu-item{
-    display:block;width:100%;text-align:left;background:none;border:none;
-    padding:10px 12px;font-size:13.5px;font-weight:600;color:#1C1730;border-radius:8px;
+    display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:none;border:none;border-radius:var(--radius-sm);
+    padding:11px 14px;font-size:13.5px;font-weight:600;color:#1C1730;white-space:nowrap;
+    transition:background .15s ease;
   }
-  .weight-more-menu-item:active{background:#F3EEF7;}
+  .weight-more-menu-item svg{width:16px;height:16px;flex:none;color:#7B4FE0;}
+  .weight-more-menu-item:hover,
+  .weight-more-menu-item:active{background:rgba(255,255,255,.75);}
+  .weight-more-menu-item:focus-visible{outline:2px solid #7B4FE0;outline-offset:-2px;}
   .weight-target-col{display:flex;flex-direction:column;align-items:flex-end;gap:3px;margin-top:6px;}
   .weight-target-status{font-size:12px;font-weight:700;}
   .weight-target-diff{font-size:11px;font-weight:600;}
@@ -2094,6 +2131,36 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .stat-graph .point.sel{fill:var(--stat-couleur);}
   .stat-graph .point.sel.rouge{fill:#E8781F;}
   .stat-graph .zone{cursor:pointer;fill:transparent;}
+  /* le point sélectionné respire, comme le bouton d'ajout de poids.
+     transform-box : sans lui, l'échelle partirait du coin du SVG et non du point */
+  .stat-graph .halo{
+    fill:none;stroke:var(--stat-couleur);stroke-width:2;
+    transform-box:fill-box;transform-origin:center;
+    opacity:0;pointer-events:none;
+    animation:poidsHalo 5s ease-out infinite;
+  }
+  .stat-graph .halo.retard{animation-delay:.4s;}
+  @keyframes poidsHalo{
+    0%{transform:scale(1);opacity:.85;}
+    12%{opacity:.45;}
+    26%{transform:scale(2.7);opacity:0;}
+    100%{transform:scale(2.7);opacity:0;}
+  }
+  @media (prefers-reduced-motion:reduce){ .stat-graph .halo{animation:none;} }
+  .poids-analyse{color:#1C1730;text-align:left;}
+  .poids-analyse .stat-aide,
+  .poids-analyse .stat-note{text-align:center;}
+  /* le verre ne se superpose pas : posées sur une carte elle-même en verre,
+     les tuiles perdaient leur relief. Elles sont donc à même la feuille. */
+  .poids-sel{margin-top:18px;padding:18px;border-radius:var(--radius-lg);}
+  .poids-analyse .stat-graph .ligne{stroke-width:1.8;}
+  .poids-analyse .stat-graph .point{stroke-width:1.6;}
+  .poids-analyse .stat-graph .halo{stroke-width:1.5;}
+  .poids-sel-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .poids-sel-quand{font-size:12.5px;font-weight:600;color:#8A82A0;}
+  .poids-sel-valeur{font-size:28px;font-weight:800;color:#1C1730;line-height:1.1;margin-top:3px;}
+  .poids-sel-pesees{font-size:11px;font-weight:600;color:#8A82A0;text-align:right;flex-shrink:0;padding-top:2px;}
+  .poids-analyse .stat-tuiles{margin-top:16px;}
   .stat-aide{font-size:11.5px;color:#8A82A0;text-align:center;margin-top:6px;}
   .stat-bilan{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;}
   .stat-note{font-size:11px;color:#8A82A0;margin-top:8px;text-align:center;}
@@ -2218,15 +2285,11 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   html:has(.weight-sheet-backdrop, .stat-backdrop, .photo-fond) body{overflow:hidden;overscroll-behavior:none;}
   .weight-history-list,.stat-sheet,.photo-sheet{overscroll-behavior:contain;}
   .photo-sheet{will-change:transform;}
-  /* l'historique fait la même taille que la vue d'ensemble : plus de deuxième feuille qui dépasse derrière */
-  #weightHistorySheet{min-height:78vh;max-height:85vh;}
   #weightHistorySheet .cat-header h1{color:#1C1730;}
   /* le voile du fond apparaît sans toucher à l'opacité (qui cassait l'effet verre de la feuille) */
   .stat-backdrop{animation:fondApparait .25s ease;}
   @keyframes fondApparait{from{background-color:transparent;}}
   @media (prefers-reduced-motion: reduce){ .stat-backdrop{animation:none;} }
-  /* sur téléphone, le fond de la page suit le thème clair : plus de violet vif quand l'écran rebondit */
-  @media (max-width:480px){ body:has(#app.repas-theme){background:#EDE1F5;} }
 
   /* ---------- écran compte ---------- */
   .intro-deja{
@@ -2294,13 +2357,6 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .weight-sheet{padding-bottom:calc(32px + env(safe-area-inset-bottom));}
   .weight-sheet.repas-prompt{padding-bottom:calc(26px + env(safe-area-inset-bottom));}
   .stat-sheet{padding-bottom:calc(34px + env(safe-area-inset-bottom));}
-  .install-carte{display:flex;gap:14px;align-items:flex-start;padding:14px;border-radius:var(--radius-md);}
-  .install-icone{width:48px;height:48px;border-radius:12px;flex-shrink:0;}
-  .install-texte{margin:0;font-size:14px;line-height:1.45;color:#1C1730;font-weight:600;}
-  .install-etapes{margin:6px 0 0;font-size:13px;line-height:1.5;color:#5B5372;}
-  .install-ico{display:inline-flex;vertical-align:-3px;color:#2F7FD4;}
-  .install-ico svg{width:16px;height:16px;}
-  .install-carte .btn-secondary{margin-top:10px;padding:10px;}
 
   /* ---------- bouton + de la barre : photo du repas ---------- */
   .nav-pill-slider{width:calc((100% - 20px) / 5);}
@@ -2490,6 +2546,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
   .cal-number, .macro-num, .progress-square-value, .stat-gros-num,
   .recap-kcal, .recap-macro-val, .conseil-val, .tile-record, .menu-card-cal,
   .weight-detail-current, .weight-picker-value, .serie-fx-nombre, .serie-nombre,
+  .poids-sel-valeur, .poids-analyse .stat-tuile-val,
   .photo-titre, .photo-plat, .photo-total-val{
     font-family:var(--police-titre);letter-spacing:0;
   }
@@ -2568,8 +2625,7 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); wind
 /* Mode sombre : chaque règle de couleur de la feuille principale, reprise
    avec des teintes foncées. Actif quand <html> porte la classe « sombre ». */
 @keyframes repasHalo-sombre{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.154), 0 4px 16px rgba(253,149,61,0.14), 0 0 0 0 rgba(253,149,61,0)}50%{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.154), 0 4px 16px rgba(253,149,61,0.196), 0 0 0 5px rgba(253,149,61,0.168)}}
-html.sombre body{background:var(--bg);color:var(--ink)}
-html.sombre #app{background:var(--bg)}
+html.sombre body{color:var(--ink)}
 html.sombre .muted{color:var(--muted)}
 html.sombre .loading-wrap{color:var(--muted)}
 html.sombre .setup-card p{color:var(--muted)}
@@ -2781,8 +2837,6 @@ html.sombre .weight-objective-reached{color:#8FD6AD}
 html.sombre .repas-theme .progress-square-sub.weight-objective-reached{color:#8FD6AD}
 html.sombre .weight-kg-suffix{color:var(--muted)}
 html.sombre .repas-theme .weight-kg-suffix{color:#AAA5B7}
-html.sombre .weight-chart-line{stroke:#A98DF0;filter:drop-shadow(0 0 3px rgba(0,0,0,0.78))}
-html.sombre .weight-chart-dot{fill:#A98DF0;filter:drop-shadow(0 0 3px #000000) drop-shadow(0 0 7px rgba(0,0,0,0.78))}
 html.sombre .weight-history-row{border-bottom:1px solid #44335B}
 html.sombre .weight-history-row:last-child{border-bottom:none}
 html.sombre .weight-history-date{color:#EDECF4}
@@ -2821,10 +2875,13 @@ html.sombre .meal-block.a-remplir .meal-add{border:none;color:#fff;background:li
 html.sombre .meal-block.a-remplir.pulse .meal-row{animation:repasHalo-sombre 1.8s ease-in-out 2}
 html.sombre .weight-sheet-handle{background:#251C33}
 html.sombre .weight-sheet .progress-square-label{color:#EDECF4}
-html.sombre .weight-more-btn{border:1.5px solid #47335B;background:rgba(46,37,72,0.76);color:#EDECF4}
-html.sombre .weight-more-menu{background:#2E2548;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+html.sombre .weight-more-btn{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112);color:#EDECF4}
+html.sombre .weight-more-btn.ouvert{background:rgba(46,37,72,0.92);border-color:rgba(255,255,255,0.22)}
+html.sombre .weight-more-menu{background:rgba(38,30,60,0.975);border:1px solid rgba(255,255,255,0.13);box-shadow:0 12px 30px rgba(0,0,0,.35)}
 html.sombre .weight-more-menu-item{background:none;border:none;color:#EDECF4}
-html.sombre .weight-more-menu-item:active{background:#1D1226}
+html.sombre .weight-more-menu-item svg{color:#A98DF0}
+html.sombre .weight-more-menu-item:hover,
+html.sombre .weight-more-menu-item:active{background:rgba(255,255,255,0.09)}
 html.sombre .weight-target-over{color:#FD953D}
 html.sombre .weight-target-ok{color:#8FD6AD}
 html.sombre .weight-sheet .weight-date-label{color:#AAA5B7}
@@ -2924,6 +2981,10 @@ html.sombre .stat-periode{border:none;background:none;color:#AAA5B7}
 html.sombre .stat-periode.actif{background:#2E2548;color:#EDECF4;box-shadow:0 1px 4px rgba(0,0,0,.08)}
 html.sombre .stat-graph text{fill:#AAA5B7}
 html.sombre .stat-graph .lab-sel{fill:#EDECF4}
+html.sombre .poids-analyse{color:#EDECF4}
+html.sombre .poids-sel-quand{color:#AAA5B7}
+html.sombre .poids-sel-valeur{color:#EDECF4}
+html.sombre .poids-sel-pesees{color:#AAA5B7}
 html.sombre .stat-graph .lab-obj{fill:var(--stat-couleur)}
 html.sombre .stat-graph .ligne{fill:none;stroke:var(--stat-couleur)}
 html.sombre .stat-graph .point{fill:#454545;stroke:var(--stat-couleur)}
@@ -2948,6 +3009,10 @@ html.sombre .brioche-bulle.humeur-alerte .brioche-texte::before{background:rgba(
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte{background:rgba(36,76,47,0.632);color:#8FD6AD}
 html.sombre .brioche-bulle.humeur-bravo .brioche-texte::before{background:rgba(36,76,47,0.632)}
 html.sombre .stat-sheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local}
+html.sombre #weightDetailSheet,
+html.sombre #weightHistorySheet{background:linear-gradient(180deg, #261832 0%, #23152C 45%, #1D1226 100%);background-attachment:local;border:1.5px solid rgba(255,255,255,0.144);border-bottom:none}
+html.sombre #weightDetailBackdrop,
+html.sombre #weightHistoryBackdrop{background:rgba(28,23,48,.18)}
 html.sombre .stat-verre{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112);box-shadow:none}
 html.sombre .stat-periode.actif{background:#2E2548;box-shadow:none}
 html.sombre .stat-verre.vert{background:rgba(36,76,47,0.69);border-color:rgba(67,160,71,.45)}
@@ -2965,7 +3030,6 @@ html.sombre .confirm-annuler{background:rgba(123,79,224,0.192);color:#A58ADB}
 html.sombre .confirm-supprimer{background:#D9534F;color:#fff}
 html.sombre #weightHistorySheet .cat-header h1{color:#EDECF4}
 @media (max-width:480px){
-html.sombre body:has(#app.repas-theme){background:#23152C}
 }
 html.sombre .intro-deja{background:none;border:none;color:#A98DF0}
 html.sombre .compte-brio{box-shadow:0 8px 18px rgba(0,0,0,0.286)}
@@ -3046,9 +3110,8 @@ html.sombre .photo-quota.epuise{color:#A697CE;background:rgba(123,79,224,0.16)}
 /* ---- réglages fins du mode sombre ---- */
 /* barres de fermeture des feuilles : même gris que les contours des cases
    (placé ici pour ne plus être écrasé quand le thème sombre est régénéré) */
-html.sombre .weight-sheet-handle{background:rgba(255,255,255,.114);}
-html.sombre{color-scheme:dark;}
-html.sombre body{background:#1D1226;}
+html.sombre .weight-sheet-handle{background:rgba(255,255,255,.26);}
+html.sombre{color-scheme:dark;--fond-page:#1D1226;}
 html.sombre .reg-switch::after{background:#FFFFFF;box-shadow:0 2px 5px rgba(0,0,0,.35);}
 html.sombre .reg-switch{background:rgba(255,255,255,.16);}
 html.sombre .reg-switch:checked{background:#7B4FE0;}
@@ -7079,43 +7142,6 @@ async function undoWater(){
 }
 
 /* ---------------- écran Progrès ---------------- */
-function buildWeightChartSVG(history){
-  const dates = Object.keys(history).sort();
-  const recentDates = dates.slice(-14);
-  const points = recentDates.map(d => history[d]);
-  if (points.length === 0) return '';
-
-  const W = 240, H = 40, PAD = 6;
-
-  if (points.length === 1){
-    const y = H / 2;
-    return `
-      <svg viewBox="0 0 ${W} ${H}" class="weight-chart-svg" preserveAspectRatio="none">
-        <circle cx="${W - PAD}" cy="${y}" r="4" class="weight-chart-dot"/>
-      </svg>`;
-  }
-
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = (max - min) || 1;
-  const stepX = (W - PAD * 2) / (points.length - 1);
-
-  const coords = points.map((v, i) => {
-    const x = PAD + i * stepX;
-    const y = PAD + (1 - (v - min) / range) * (H - PAD * 2);
-    return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
-  });
-
-  const polylinePoints = coords.map(c => c.join(',')).join(' ');
-  const [lastX, lastY] = coords[coords.length - 1];
-
-  return `
-    <svg viewBox="0 0 ${W} ${H}" class="weight-chart-svg" preserveAspectRatio="none">
-      <polyline points="${polylinePoints}" class="weight-chart-line" fill="none"/>
-      <circle cx="${lastX}" cy="${lastY}" r="4" class="weight-chart-dot"/>
-    </svg>`;
-}
-
 function imcCategory(imc){
   if (imc < 18.5) return 'Insuffisance pondérale';
   if (imc < 25) return 'Corpulence normale';
@@ -7149,6 +7175,267 @@ function buildRulerTicks(){
   return html;
 }
 
+/* ---------------- Analyse du poids ----------------
+   Trois échelles de lecture. Les pesées jour par jour montrent le détail, mais
+   le poids oscille d'un jour à l'autre pour des raisons qui n'ont rien à voir
+   avec la graisse : les semaines et les mois sont donc des moyennes, seules
+   capables de dégager une tendance de fond. */
+const POIDS_ECHELLES = {
+  jours:    { libelle: 'Jours',    n: 30, periode: '30 derniers jours' },
+  semaines: { libelle: 'Semaines', n: 12, periode: '12 dernières semaines' },
+  mois:     { libelle: 'Mois',     n: 12, periode: '12 derniers mois' },
+};
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+let poidsFeuille = { echelle: 'jours', point: null, animer: true };
+
+const poidsKg = v => v.toFixed(1).replace('.', ',') + ' kg';
+// un écart ne veut rien dire sans son signe : le moins typographique se lit mieux
+const poidsEcart = kg => (kg > 0 ? '+' : kg < 0 ? '−' : '') + Math.abs(kg).toFixed(1).replace('.', ',') + ' kg';
+
+function lundiDe(cle){
+  const d = new Date(cle + 'T00:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));   // la semaine commence lundi
+  return dateKey(d);
+}
+
+function poidsSerie(echelle){
+  const hist = state.weightHistory || {};
+  const dates = Object.keys(hist).sort();
+  if (!dates.length) return [];
+  const conf = POIDS_ECHELLES[echelle];
+  const fin = state.viewDate || todayKey();
+
+  if (echelle === 'jours'){
+    const debut = decalerJour(fin, 1 - conf.n);
+    return dates.filter(d => d >= debut && d <= fin).map(d => {
+      const dt = new Date(d + 'T00:00:00');
+      return { cle: d, valeur: hist[d], pesees: 1,
+               court: `${dt.getDate()}/${dt.getMonth() + 1}`,
+               long: formatFullDateFR(dt) };
+    });
+  }
+
+  const seaux = new Map();
+  for (const d of dates){
+    if (d > fin) continue;
+    const cle = echelle === 'semaines' ? lundiDe(d) : d.slice(0, 7);
+    if (!seaux.has(cle)) seaux.set(cle, []);
+    seaux.get(cle).push(hist[d]);
+  }
+  return [...seaux.keys()].sort().slice(-conf.n).map(cle => {
+    const vals = seaux.get(cle);
+    const moyenne = vals.reduce((a, b) => a + b, 0) / vals.length;
+    if (echelle === 'semaines'){
+      const lun = new Date(cle + 'T00:00:00');
+      const dim = new Date(lun); dim.setDate(dim.getDate() + 6);
+      return { cle, valeur: moyenne, pesees: vals.length,
+               court: `${lun.getDate()}/${lun.getMonth() + 1}`,
+               long: `Semaine du ${lun.getDate()} au ${dim.getDate()} ${MOIS_FR[dim.getMonth()]}` };
+    }
+    const [an, m] = cle.split('-');
+    return { cle, valeur: moyenne, pesees: vals.length,
+             court: MOIS_FR[+m - 1].slice(0, 4),
+             long: `${MOIS_FR[+m - 1]} ${an}` };
+  });
+}
+
+/* L'échelle verticale d'un poids ne part pas de zéro — sinon toutes les courbes
+   seraient plates. Du coup elle est tronquée, et les bornes doivent être
+   écrites sur l'axe : sans elles, un demi-kilo prend l'allure d'un effondrement. */
+function poidsGraphiqueSvg(serie, objectif, cleSel, animer){
+  const W = 330, H = 186, L = 42, R = 14, T = 16, B = 30;
+  const pw = W - L - R, ph = H - T - B;
+  const vals = serie.map(p => p.valeur);
+  let bas = Math.min(...vals), haut = Math.max(...vals);
+  if (objectif){ bas = Math.min(bas, objectif); haut = Math.max(haut, objectif); }
+  const marge = (haut - bas) * 0.18 || 1;
+  bas -= marge; haut += marge;
+  const n = serie.length;
+  const x = i => L + (n === 1 ? pw / 2 : i * pw / (n - 1));
+  const y = v => T + ph - ((v - bas) / (haut - bas)) * ph;
+
+  const axe = v => v.toFixed(1).replace('.', ',');
+  const iSel = Math.max(0, serie.findIndex(p => p.cle === cleSel));
+  const r = n > 10 ? 2.2 : 3.4;
+  const pas = n > 10 ? Math.ceil(n / 5) : 1;
+  const trait = state.sombre ? 'rgba(255,255,255,.12)' : '#E4D3F5';
+  const chemin = serie.map((p, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.valeur).toFixed(1)).join(' ');
+  const largZone = n === 1 ? pw : pw / (n - 1);
+
+  const labelsX = serie.map((p, i) => {
+    if (i !== iSel && ((n - 1 - i) % pas !== 0 || Math.abs(i - iSel) < 1.5)) return '';
+    return `<text x="${x(i).toFixed(1)}" y="${H - 9}" text-anchor="middle" class="${i === iSel ? 'lab-sel' : ''}">${p.court}</text>`;
+  }).join('');
+
+  return `
+    <svg class="stat-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du poids, ${n} point${n > 1 ? 's' : ''}">
+      <line x1="${L}" x2="${W - R}" y1="${T}" y2="${T}" stroke="${trait}" stroke-width="1"/>
+      <line x1="${L}" x2="${W - R}" y1="${T + ph}" y2="${T + ph}" stroke="${trait}" stroke-width="1"/>
+      <text x="${L - 6}" y="${T + 3}" text-anchor="end">${axe(haut)}</text>
+      <text x="${L - 6}" y="${T + ph + 3}" text-anchor="end">${axe(bas)}</text>
+      ${objectif ? `
+        <line x1="${L}" x2="${W - R}" y1="${y(objectif).toFixed(1)}" y2="${y(objectif).toFixed(1)}" stroke="var(--stat-couleur)" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <text x="${L - 6}" y="${(y(objectif) + 3).toFixed(1)}" text-anchor="end" class="lab-obj">${axe(objectif)}</text>` : ''}
+      <line x1="${x(iSel).toFixed(1)}" x2="${x(iSel).toFixed(1)}" y1="${T}" y2="${T + ph}" stroke="${state.sombre ? '#FFFFFF' : '#1C1730'}" stroke-opacity=".14" stroke-width="1.5"/>
+      ${n > 1 ? `<path d="${chemin}" class="ligne ${animer ? 'anime' : ''}" pathLength="1"/>` : ''}
+      <circle cx="${x(iSel).toFixed(1)}" cy="${y(serie[iSel].valeur).toFixed(1)}" r="${r + 2}" class="halo"/>
+      <circle cx="${x(iSel).toFixed(1)}" cy="${y(serie[iSel].valeur).toFixed(1)}" r="${r + 2}" class="halo retard"/>
+      ${serie.map((p, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.valeur).toFixed(1)}" r="${i === iSel ? r + 2 : r}" class="point ${i === iSel ? 'sel' : ''}"/>`).join('')}
+      ${labelsX}
+      ${serie.map((p, i) => `<rect class="zone" data-point="${p.cle}" x="${(x(i) - largZone / 2).toFixed(1)}" y="0" width="${largZone.toFixed(1)}" height="${H}"/>`).join('')}
+    </svg>`;
+}
+
+function commentairePoidsBrioche(serie, objectif, variation){
+  if (!serie.length) return 'Note ton poids et je t\u2019accompagne \u00e0 partir de l\u00e0.';
+  if (serie.length < 3){
+    return 'Encore deux ou trois pes\u00e9es et je pourrai te montrer ta tendance. P\u00e8se-toi toujours dans les m\u00eames conditions, le matin de pr\u00e9f\u00e9rence.';
+  }
+
+  const kg = n => Math.abs(n).toFixed(1).replace('.', ',') + ' kg';
+  const actuel = serie[serie.length - 1].valeur;
+  const bouge = Math.abs(variation) >= 0.3;
+  const monte = variation > 0;
+  // sans objectif, on ne sait pas si monter est une bonne nouvelle : on s'en tient aux faits
+  const reste = objectif ? actuel - objectif : null;
+  const atteint = reste != null && Math.abs(reste) < 0.3;
+  const veutMaigrir = reste != null && reste > 0;
+  const veutPrendre = reste != null && reste < 0;
+  const bonSens = (veutMaigrir && !monte) || (veutPrendre && monte);
+
+  if (atteint){
+    return 'Tu es pile sur ton objectif \u2014 bravo. Le plus dur commence : le tenir. Je reste avec toi \uD83C\uDF31';
+  }
+
+  if (!bouge){
+    return reste == null
+      ? 'Ton poids est stable sur la p\u00e9riode. Se maintenir demande autant de constance que de changer : c\u2019est d\u00e9j\u00e0 une r\u00e9ussite.'
+      : `Ton poids tient bon, \u00e0 ${kg(reste)} de ton objectif. La stabilit\u00e9 n\u2019est pas du surplace : c\u2019est ce qui rend la suite solide. On repart quand tu veux.`;
+  }
+
+  // ce que la personne redoute de lire : ici Brioche rassure, elle ne sermonne pas
+  if (monte && !veutPrendre){
+    return reste == null
+      ? `+${kg(variation)} sur la p\u00e9riode. Le poids monte et descend pour mille raisons \u2014 l\u2019eau, le sel, le sommeil \u2014 et un chiffre n\u2019efface rien de ce que tu fais. Regarde la tendance sur plusieurs semaines plut\u00f4t que jour apr\u00e8s jour.`
+      : `+${kg(variation)} sur la p\u00e9riode. \u00c7a arrive \u00e0 tout le monde, et \u00e7a ne d\u00e9fait pas le chemin parcouru. Le corps varie beaucoup d\u2019un jour \u00e0 l\u2019autre : reprends tranquillement, sans rien serrer d\u2019un coup.`;
+  }
+
+  if (!monte && veutPrendre){
+    return `\u2212${kg(variation)} alors que tu cherches \u00e0 prendre. Pas de panique : ajoute simplement un peu partout plut\u00f4t qu\u2019un gros repas, c\u2019est ce qui tient sur la dur\u00e9e.`;
+  }
+
+  // le poids va dans le sens voulu : on félicite, en gardant le cap visible
+  if (bonSens){
+    return `${monte ? '+' : '\u2212'}${kg(variation)} dans le bon sens, et plus que ${kg(reste)} pour y \u00eatre. Tu avances avec brio \u2014 continue exactement comme \u00e7a !`;
+  }
+
+  return `${monte ? '+' : '\u2212'}${kg(variation)} sur la p\u00e9riode. Tu avances, et c\u2019est le genre de progr\u00e8s qui dure quand il est r\u00e9gulier. Fixe-toi un objectif si tu veux que je suive le cap avec toi.`;
+}
+
+function poidsAnalyseHtml(){
+  const serie = poidsSerie(poidsFeuille.echelle);
+  const conf = POIDS_ECHELLES[poidsFeuille.echelle];
+  const objectif = state.body.poidsObjectif || null;
+  const onglets = Object.entries(POIDS_ECHELLES).map(([id, c]) =>
+    `<button class="stat-periode ${poidsFeuille.echelle === id ? 'actif' : ''}" data-echelle="${id}">${c.libelle}</button>`).join('');
+  const entete = `
+    <div class="stat-evol-tete">
+      <div class="stat-evol-titre">Évolution</div>
+      <div class="stat-periodes stat-verre">${onglets}</div>
+    </div>`;
+
+  if (!serie.length){
+    return `<div class="poids-analyse" style="--stat-couleur:${state.sombre ? '#A98DF0' : '#7B4FE0'};--stat-piste:${state.sombre ? 'rgba(255,255,255,.1)' : '#E4D3F5'};--stat-fond:rgba(123,79,224,.08)">
+      ${entete}
+      <div class="stat-vide" style="margin-top:14px;">Aucune pesée sur cette période.</div>
+      <div class="stat-brioche stat-verre">
+        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        <div>${commentairePoidsBrioche(serie, objectif, 0)}</div>
+      </div>
+    </div>`;
+  }
+
+  let iSel = serie.findIndex(p => p.cle === poidsFeuille.point);
+  if (iSel < 0) iSel = serie.length - 1;
+  const sel = serie[iSel];
+  const precedent = iSel > 0 ? serie[iSel - 1] : null;
+  const premier = serie[0];
+  const variation = serie[serie.length - 1].valeur - premier.valeur;
+  const vals = serie.map(p => p.valeur);
+  const moyenne = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const pesees = serie.reduce((s, p) => s + p.pesees, 0);
+  const libEchelle = poidsFeuille.echelle === 'jours' ? 'vs pesée d’avant'
+    : poidsFeuille.echelle === 'semaines' ? 'vs semaine d’avant' : 'vs mois d’avant';
+
+  const tuile = (val, lab, teinte) =>
+    `<div class="stat-tuile stat-verre ${teinte || ''}"><div class="stat-tuile-val">${val}</div><div class="stat-tuile-lab">${lab}</div></div>`;
+
+  return `
+    <div class="poids-analyse" style="--stat-couleur:${state.sombre ? '#A98DF0' : '#7B4FE0'};--stat-piste:${state.sombre ? 'rgba(255,255,255,.1)' : '#E4D3F5'};--stat-fond:rgba(123,79,224,.08)">
+      ${entete}
+      ${poidsGraphiqueSvg(serie, objectif, sel.cle, poidsFeuille.animer)}
+      <div class="stat-aide">Touche un point pour le détail de ${poidsFeuille.echelle === 'jours' ? 'ce jour' : poidsFeuille.echelle === 'semaines' ? 'cette semaine' : 'ce mois'}.</div>
+
+      <div class="poids-sel stat-verre">
+        <div class="poids-sel-tete">
+          <div>
+            <div class="poids-sel-quand">${sel.long}</div>
+            <div class="poids-sel-valeur">${poidsKg(sel.valeur)}</div>
+          </div>
+          ${sel.pesees > 1 ? `<span class="poids-sel-pesees">moyenne de ${sel.pesees} pesées</span>` : ''}
+        </div>
+        <div class="stat-tuiles">
+          ${tuile(precedent ? poidsEcart(sel.valeur - precedent.valeur) : '—', precedent ? libEchelle : 'Premier point')}
+          ${tuile(iSel > 0 ? poidsEcart(sel.valeur - premier.valeur) : '—', 'Depuis le début')}
+          ${tuile(objectif ? poidsEcart(sel.valeur - objectif) : '—', objectif ? 'vs objectif' : 'Pas d’objectif',
+                  objectif && Math.abs(sel.valeur - objectif) < 0.3 ? 'vert' : '')}
+        </div>
+      </div>
+
+      <div class="stat-evol-titre" style="margin-top:22px;">Sur ${conf.periode}</div>
+      <div class="stat-bilan">
+        ${tuile(poidsEcart(variation), 'Variation')}
+        ${tuile(poidsKg(moyenne), 'Moyenne')}
+        ${tuile(`${poidsKg(Math.min(...vals))} → ${poidsKg(Math.max(...vals))}`.replace(/ kg/g, ''), 'Extrêmes')}
+      </div>
+      <div class="stat-note">${pesees} pesée${pesees > 1 ? 's' : ''} sur la période.${poidsFeuille.echelle !== 'jours' ? ` Chaque point est la moyenne ${poidsFeuille.echelle === 'semaines' ? 'de sa semaine' : 'de son mois'}.` : ''}</div>
+
+      <div class="stat-brioche stat-verre">
+        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        <div>${commentairePoidsBrioche(serie, objectif, variation)}</div>
+      </div>
+    </div>`;
+}
+
+function poidsAnalyseBrancher(){
+  const bloc = document.querySelector('.poids-analyse');
+  if (!bloc) return;
+  bloc.querySelectorAll('.stat-periode').forEach(b => {
+    b.onclick = () => {
+      poidsFeuille.echelle = b.dataset.echelle;
+      poidsFeuille.point = null;      // la sélection n'a plus de sens d'une échelle à l'autre
+      poidsFeuille.animer = true;
+      poidsAnalyseRafraichir();
+    };
+  });
+  bloc.querySelectorAll('.stat-graph .zone').forEach(z => {
+    z.onclick = () => { poidsFeuille.point = z.dataset.point; poidsFeuille.animer = false; poidsAnalyseRafraichir(); };
+  });
+}
+
+function poidsAnalyseRafraichir(){
+  const hote = document.getElementById('poidsAnalyse');
+  if (!hote) return;
+  hote.innerHTML = poidsAnalyseHtml();
+  poidsFeuille.animer = false;
+  poidsAnalyseBrancher();
+}
+
+/* Trois points et petite liste : dessinés, pour rester nets et bien centrés
+   quelle que soit la police du système. */
+const ICONE_TROIS_POINTS = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>';
+const ICONE_LISTE = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 4h7M6 8h7M6 12h7"/><circle cx="2.6" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="2.6" cy="12" r="1" fill="currentColor" stroke="none"/></svg>';
+
 function renderProgres(){
   // Jour de référence = le jour sélectionné dans le calendrier de l'accueil
   const viewDay = state.viewDate || todayKey();
@@ -7162,7 +7449,10 @@ function renderProgres(){
   const poidsObjectif = state.body.poidsObjectif;
 
   const sortedHistoryDates = Object.keys(state.weightHistory).sort().reverse();
-  const weightDetailChart = buildWeightChartSVG(state.weightHistory);
+  const weightDetailChart = poidsAnalyseHtml();
+  // le tracé de la courbe est joué une fois, à l'ouverture : sans ça il
+  // repartait de zéro dès qu'un clic dans la feuille redessinait l'écran
+  poidsFeuille.animer = false;
   const FULL_DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   const weightDetailList = sortedHistoryDates.map(d => {
     const dt = new Date(d + 'T00:00:00');
@@ -7173,7 +7463,7 @@ function renderProgres(){
     return `
       <div class="weight-history-row">
         <span class="weight-history-date">${label}</span>
-        <span class="weight-history-value">${state.weightHistory[d].toFixed(1)} kg</span>
+        <span class="weight-history-value">${poidsKg(state.weightHistory[d])}</span>
       </div>`;
   }).join('');
 
@@ -7228,7 +7518,7 @@ function renderProgres(){
         ${(poids && poidsObjectif) ? (
           Math.abs(poids - poidsObjectif) < 0.05
             ? `<div class="progress-square-sub weight-objective-reached">Objectif atteint</div>`
-            : `<div class="progress-square-sub weight-objective ${(poids - poidsObjectif) > 0 ? 'weight-objective-over' : ''}">${(poids - poidsObjectif) > 0 ? '+' : ''}${(poids - poidsObjectif).toFixed(1)} kg vs obj.</div>`
+            : `<div class="progress-square-sub weight-objective ${(poids - poidsObjectif) > 0 ? 'weight-objective-over' : ''}">${poidsEcart(poids - poidsObjectif)} vs obj.</div>`
         ) : ''}
         <button class="weight-edit-btn${state.weightHistory[viewDay] == null ? ' weight-edit-btn-beat' : ''}" id="weightEditBtn">+</button>
       </div>
@@ -7245,38 +7535,39 @@ function renderProgres(){
       </div>
     ` : '')
     + (state.showWeightDetail ? `
-      <div class="weight-sheet-backdrop" id="weightDetailBackdrop">
+      <div class="weight-sheet-backdrop ${feuillesDejaOuvertes.detail ? 'no-fade-anim' : ''}" id="weightDetailBackdrop">
         <div class="weight-sheet ${feuillesDejaOuvertes.detail ? 'no-slide-anim' : ''}" id="weightDetailSheet">
           <div class="weight-sheet-handle" id="weightDetailHandle"></div>
           <div class="weight-panel-header">
             <div class="weight-detail-title" style="margin-bottom:0;">Vue d'ensemble</div>
             <div class="weight-more-wrap">
-              <button class="weight-more-btn" id="weightMoreBtn">⋯</button>
+              <button class="weight-more-btn${state.showWeightMoreMenu ? ' ouvert' : ''}" id="weightMoreBtn"
+                aria-label="Plus d’options" aria-haspopup="menu" aria-expanded="${state.showWeightMoreMenu ? 'true' : 'false'}">${ICONE_TROIS_POINTS}</button>
               ${state.showWeightMoreMenu ? `
-                <div class="weight-more-menu" id="weightMoreMenu">
-                  <button class="weight-more-menu-item" id="weightHistoryMenuItem">Historique des pesées</button>
+                <div class="weight-more-menu" id="weightMoreMenu" role="menu">
+                  <button class="weight-more-menu-item" id="weightHistoryMenuItem" role="menuitem">${ICONE_LISTE}Historique des pesées</button>
                 </div>
               ` : ''}
             </div>
           </div>
           <div class="weight-detail-header">
             <div>
-              <div class="weight-detail-current">${poids ? poids.toFixed(1) + ' kg' : '—'}</div>
+              <div class="weight-detail-current">${poids ? poidsKg(poids) : '—'}</div>
               <div class="weight-detail-date">${formatFullDateFR(new Date((weightInfo.date || viewDay) + 'T00:00:00'))}</div>
             </div>
             ${(poids && poidsObjectif) ? `
               <div class="weight-target-col">
                 <span class="weight-target-status ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${poids > poidsObjectif ? 'Hors cible' : 'Maintenu'}</span>
-                <span class="weight-target-diff ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${(poids - poidsObjectif) > 0 ? '+' : ''}${(poids - poidsObjectif).toFixed(1)} kg vs obj.</span>
+                <span class="weight-target-diff ${poids > poidsObjectif ? 'weight-target-over' : 'weight-target-ok'}">${poidsEcart(poids - poidsObjectif)} vs obj.</span>
               </div>
             ` : ''}
           </div>
-          ${weightDetailChart || `<p class="onboard-q" style="margin-top:14px;">Pas encore de données enregistrées.</p>`}
+          <div id="poidsAnalyse">${weightDetailChart}</div>
         </div>
       </div>
     ` : '')
     + (state.showWeightHistoryList ? `
-      <div class="weight-sheet-backdrop" id="weightHistoryBackdrop">
+      <div class="weight-sheet-backdrop ${feuillesDejaOuvertes.historique ? 'no-fade-anim' : ''}" id="weightHistoryBackdrop">
         <div class="weight-sheet ${feuillesDejaOuvertes.historique ? 'no-slide-anim' : ''}" id="weightHistorySheet">
           <div class="weight-sheet-handle" id="weightHistoryHandle"></div>
           <div class="cat-header">
@@ -7332,6 +7623,7 @@ function renderProgres(){
     weightSquareEl.onclick = () => {
       skipImcAnim = true;
       state.showWeightDetail = true;
+      poidsFeuille.animer = true;   // à l'ouverture, la courbe se trace
       renderProgres();
     };
   }
@@ -7346,6 +7638,7 @@ function renderProgres(){
       state.showWeightMoreMenu = false;
       renderProgres();
     };
+    poidsAnalyseBrancher();
     const fermerDetailAnime = brancherGlisserFermer(detailSheet, detailBackdrop, closeDetail);
     detailBackdrop.onclick = (e) => { if (e.target === detailBackdrop) fermerDetailAnime(); };
 
@@ -8381,35 +8674,6 @@ function renderRecettes(){
 }
 
 /* ---------------- écran Réglages ---------------- */
-/* ---------------- Installer l'app sur l'écran d'accueil ---------------- */
-function appInstallee(){
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
-function carteInstallationHtml(){
-  if (!window.__brioEnLigne || appInstallee()) return '';
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  let consigne;
-  if (window.__brioInstall){
-    consigne = `<button class="btn-secondary" id="rg_install">Installer BRIO</button>`;
-  } else if (ios){
-    consigne = `<p class="install-etapes">Dans Safari, touche le bouton Partager <span class="install-ico" aria-hidden="true">${ICONE_PARTAGE}</span> puis « Sur l'écran d'accueil ».</p>`;
-  } else {
-    consigne = `<p class="install-etapes">Dans le menu de ton navigateur, choisis « Installer l'application » ou « Ajouter à l'écran d'accueil ».</p>`;
-  }
-  return `
-    <div class="reg-compte">
-      <div class="reg-compte-titre">Installer sur ton téléphone</div>
-      <div class="install-carte stat-verre">
-        <img src="icons/apple-touch-icon.png" alt="" class="install-icone">
-        <div>
-          <p class="install-texte">BRIO s'ouvre alors en plein écran depuis son icône, même sans connexion.</p>
-          ${consigne}
-        </div>
-      </div>
-    </div>`;
-}
-const ICONE_PARTAGE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>`;
 
 function renderReglages(){
   const goals = state.macroGoals || {};
@@ -8475,7 +8739,6 @@ function renderReglages(){
         <button class="btn-secondary" id="rg_creer">Créer mon compte</button>
       `}
     </div>
-    ${carteInstallationHtml()}
     <p style="text-align:center;color:var(--muted);font-size:11px;margin-top:18px;">Version du 08/09/2026 08:15 UTC</p>
     </div>
   ` + bottomNavHtml('reglages');
@@ -8490,15 +8753,6 @@ function renderReglages(){
     catch(e){ showToast('Erreur de sauvegarde'); }
   };
 
-  const installBtn = document.getElementById('rg_install');
-  if (installBtn) installBtn.onclick = async () => {
-    const invite = window.__brioInstall;
-    if (!invite) return;
-    invite.prompt();
-    try { await invite.userChoice; } catch(e){}
-    window.__brioInstall = null;
-    render();
-  };
 
   const logoutBtn = document.getElementById('rg_logout');
   if (logoutBtn) logoutBtn.onclick = seDeconnecter;
