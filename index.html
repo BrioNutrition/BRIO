@@ -2217,6 +2217,8 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .brioche-bulle{display:flex;align-items:center;gap:12px;margin:16px 0 14px;}
   /* pas de filtre ni de rotation sur l'image : c'est ce qui la rendait floue pendant le saut */
   .brioche-tete{width:48px;border-radius:14px;height:auto;flex-shrink:0;display:block;}
+  /* la tenue suit Brioche jusque dans sa bulle : 48px, comme sa tête */
+  .brioche-tenue.brioche-tete-tenue{flex-shrink:0;font-size:48px;}
   /* même verre liquide que les cases calories / macros */
   .brioche-texte{
     position:relative;flex:1;padding:12px 15px;border-radius:var(--radius-md);
@@ -2365,6 +2367,109 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .compte-valider{margin-top:10px;}
   .compte-valider:disabled{opacity:.6;}
   .compte-note{font-size:12.5px;line-height:1.45;color:#8A82A0;text-align:center;margin:16px auto 0;max-width:300px;}
+
+  /* ---------- écran Récompenses ---------- */
+  .rec-hero{margin-top:30px;padding:24px 18px 18px;text-align:center;overflow:visible;}
+  /* L'accessoire se pose sur la mascotte : elle est en image, on ne peut pas
+     la redessiner, mais on peut lui mettre quelque chose dessus. La taille du
+     conteneur sert de base de police, sinon les « em » se calculeraient sur la
+     police héritée et l'accessoire serait minuscule. */
+  .brioche-tenue{position:relative;display:inline-block;line-height:0;font-size:0;}
+  .brioche-tenue img{display:block;}
+  .brioche-tenue.grande{width:104px;font-size:104px;}
+  .brioche-tenue.grande img{width:104px;height:104px;border-radius:26px;}
+  /* « top » est en pourcentage, pas en em : un « em » se calculerait sur la
+     police de l'accessoire lui-même, et non sur la taille de la mascotte.
+     Le pourcentage, lui, se rapporte bien à elle — la tenue se pose donc au
+     même endroit sur la grande mascotte comme sur la tête de la bulle. */
+  .brioche-accessoire{
+    position:absolute;line-height:1;pointer-events:none;
+    left:50%;top:-5.5%;font-size:.46em;transform:translateX(-50%);
+    filter:drop-shadow(0 2px 4px rgba(28,23,48,.28));
+  }
+  .brioche-accessoire.tenue-noeud{top:1%;left:74%;font-size:.3em;transform:rotate(14deg);}
+  .brioche-accessoire.tenue-lunettes{top:40%;font-size:.42em;}
+  .brioche-accessoire.tenue-casquette{top:-7%;font-size:.5em;}
+  .brioche-accessoire.tenue-couronne{top:-6.5%;font-size:.42em;}
+  .rec-niveau{font-family:var(--police-titre);font-size:23px;line-height:1.15;color:#1C1730;margin-top:12px;}
+  .rec-barre{
+    height:9px;border-radius:999px;background:rgba(123,79,224,.16);
+    margin:13px auto 8px;overflow:hidden;max-width:260px;
+  }
+  .rec-barre span{
+    display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,#A98DF0,#7B4FE0);
+    transition:width .7s cubic-bezier(.45,0,.2,1);
+  }
+  .rec-vers{font-size:12.5px;color:#8A82A0;}
+
+  .rec-jour{padding:6px 16px 14px;}
+  .rec-ligne{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 0;border-bottom:1px solid rgba(123,79,224,.1);font-size:14px;
+  }
+  .rec-coche{
+    width:19px;height:19px;flex-shrink:0;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;color:#fff;
+    background:rgba(123,79,224,.14);
+  }
+  .rec-ligne.faite .rec-coche{background:#7B4FE0;}
+  .rec-lab{flex:1;min-width:0;color:#8A82A0;}
+  .rec-ligne.faite .rec-lab{color:#1C1730;font-weight:600;}
+  .rec-pts{font-weight:800;font-size:13px;color:#C9C2D8;white-space:nowrap;}
+  .rec-ligne.faite .rec-pts{color:#7B4FE0;}
+  .rec-total{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding-top:13px;font-size:14px;font-weight:700;color:#1C1730;
+  }
+  .rec-total b{font-family:var(--police-titre);font-size:19px;color:#7B4FE0;}
+
+  .rec-tenues{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;}
+  .rec-tenue{
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    padding:13px 6px 11px;border-radius:var(--radius-md);
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
+    transition:border-color .16s ease,background .16s ease,transform .12s ease;
+  }
+  .rec-tenue:active{transform:scale(.96);}
+  .rec-tenue:disabled{opacity:.42;}
+  .rec-tenue.portee{border-color:#7B4FE0;box-shadow:inset 0 0 0 1px #7B4FE0;}
+  .rec-tenue-vignette{font-size:26px;line-height:1;}
+  .rec-tenue-nom{font-size:11.5px;font-weight:700;color:#1C1730;text-align:center;line-height:1.2;}
+  .rec-tenue-prix{font-size:10.5px;font-weight:800;color:#7B4FE0;}
+  .rec-tenue.possedee:not(.portee) .rec-tenue-prix{color:#8A82A0;}
+
+  .rec-joker{padding:16px;}
+  .rec-joker-txt{font-size:13.5px;line-height:1.5;color:#8A82A0;margin:0;}
+  .rec-joker-txt b{color:#1C1730;}
+  .rec-joker-alerte{
+    font-size:13px;line-height:1.5;color:#C75F0E;margin:11px 0 0;
+    background:rgba(199,95,14,.1);border-radius:12px;padding:10px 12px;
+  }
+  .rec-joker .btn-primary,.rec-joker .btn-secondary{margin-top:12px;}
+
+  /* le gain qui s'envole après une action */
+  .gain-points{
+    position:fixed;left:50%;bottom:132px;z-index:70;
+    transform:translateX(-50%);pointer-events:none;
+    font-family:var(--police-titre);font-size:26px;color:#7B4FE0;
+    text-shadow:0 2px 14px rgba(255,255,255,.9);
+    animation:gainMonte 1.7s cubic-bezier(.3,.8,.35,1) forwards;
+  }
+  @keyframes gainMonte{
+    0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.8);}
+    18%{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+    70%{opacity:1;}
+    100%{opacity:0;transform:translateX(-50%) translateY(-54px) scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .gain-points{animation-duration:.01s;}
+    .rec-barre span{transition:none;}
+  }
 
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
@@ -3327,6 +3432,27 @@ html.sombre .rg-stat span{color:#AAA5B7;}
   color:#8A82A0;margin:0 0 9px 6px;
 }
 html.sombre .rg-section-titre{color:#9C95AE;}
+html.sombre .rec-niveau{color:#EDECF4}
+html.sombre .rec-vers{color:#AAA5B7}
+html.sombre .rec-barre{background:rgba(169,141,240,.2)}
+html.sombre .rec-ligne{border-bottom-color:rgba(255,255,255,.08)}
+html.sombre .rec-coche{background:rgba(169,141,240,.2)}
+html.sombre .rec-ligne.faite .rec-coche{background:#A98DF0;color:#1C1730}
+html.sombre .rec-lab{color:#AAA5B7}
+html.sombre .rec-ligne.faite .rec-lab{color:#EDECF4}
+html.sombre .rec-pts{color:#6B6480}
+html.sombre .rec-ligne.faite .rec-pts{color:#A98DF0}
+html.sombre .rec-total{color:#EDECF4}
+html.sombre .rec-total b{color:#A98DF0}
+html.sombre .rec-tenue{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112)}
+html.sombre .rec-tenue.portee{border-color:#A98DF0;box-shadow:inset 0 0 0 1px #A98DF0}
+html.sombre .rec-tenue-nom{color:#EDECF4}
+html.sombre .rec-tenue-prix{color:#A98DF0}
+html.sombre .rec-tenue.possedee:not(.portee) .rec-tenue-prix{color:#AAA5B7}
+html.sombre .rec-joker-txt{color:#AAA5B7}
+html.sombre .rec-joker-txt b{color:#EDECF4}
+html.sombre .rec-joker-alerte{color:#FD953D;background:rgba(253,149,61,.12)}
+html.sombre .gain-points{color:#A98DF0;text-shadow:0 2px 16px rgba(28,23,48,.9)}
 /* une carte qui n'empile que des lignes se resserre : chaque ligne a déjà sa
    propre respiration verticale */
 .rg-carte{padding:4px 16px;}
@@ -3622,6 +3748,8 @@ let state = {
   body: { poids: null, taille: null, poidsObjectif: null },
   weightHistory: {},     // { "YYYY-MM-DD": poids le plus bas du jour }
   streak: { dernier: null, jours: 0, record: 0 },  // série de jours consécutifs
+  recompenses: null,    // { depense, tenues, tenue, jokers, jokersPoses }
+  pts: null,            // recalculé à chaque rendu, jamais enregistré
   sombre: false,         // mode sombre : proposé dans les réglages, clair par défaut
   favoris: [],           // aliments favoris (valeurs pour 100 g/ml)
   foodOnglet: 'suggestions', // dernier onglet ouvert dans la recherche d'aliments
@@ -4048,6 +4176,15 @@ async function boot(){
   } catch(e){}
 
   try {
+    const r = await window.storage.get('recompenses', true);
+    state.recompenses = r ? JSON.parse(r.value) : null;
+  } catch(e){ state.recompenses = null; }
+  state.recompenses = Object.assign(
+    { depense:0, tenues:['aucune'], tenue:'aucune', jokers:0, jokersPoses:{} },
+    state.recompenses || {}
+  );
+
+  try {
     const r = await window.storage.get('taste-progress', true);
     state.tasteProgress = r ? JSON.parse(r.value) : null;
   } catch(e){ state.tasteProgress = null; }
@@ -4193,9 +4330,10 @@ function formatFullDateFR(d){
 
 /* ---------------- render router ---------------- */
 const MAIN_SCREENS = ['category','progres','recettes','reglages'];
-const LIGHT_SCREENS = [...MAIN_SCREENS, 'onboarding', 'welcome', 'gouts', 'intro', 'compte'];
+const LIGHT_SCREENS = [...MAIN_SCREENS, 'onboarding', 'welcome', 'gouts', 'intro', 'compte', 'recompenses'];
 function render(){
   if (state.screen !== 'progres') feuillesDejaOuvertes = { poids:false, detail:false, historique:false };
+  majEtatPoints();
   app.classList.toggle('repas-theme', LIGHT_SCREENS.includes(state.screen));
   app.classList.toggle('with-nav', MAIN_SCREENS.includes(state.screen));
 
@@ -4208,6 +4346,7 @@ function render(){
   if (state.screen === 'gouts') return renderGouts();
   if (state.screen === 'recettes') return renderRecettes();
   if (state.screen === 'reglages') return renderReglages();
+  if (state.screen === 'recompenses') return renderRecompenses();
 }
 
 /* ---------------- onboarding : parcours nouvel utilisateur ---------------- */
@@ -4812,28 +4951,186 @@ function oublierProgression(cle){
 
 // Un jour de plus si la dernière visite était hier ; la série repart à 1 si
 // un jour a été sauté. Revenir plusieurs fois le même jour ne compte qu'une fois.
-async function majSerie(){
+/* ---------------- points, niveaux et récompenses ----------------
+   Les points ne sont jamais stockés : ils se recalculent à partir des repas,
+   de l'eau et des pesées déjà enregistrés. Un compteur désynchronisé se
+   reconstruit donc tout seul, et personne ne peut s'en fabriquer un.
+   Seul le dépensé est gardé, parce que c'est la seule chose qui ne se déduit
+   de rien. */
+const BAREME = { repas:10, journee:20, cal:25, prot:15, eau:15, pesee:10, serie:5, serieMax:50 };
+const PRIX_JOKER = 300;
+
+const NIVEAUX = [
+  { seuil:0,     nom:'Graine',       emoji:'🌱' },
+  { seuil:500,   nom:'Levain',       emoji:'🫧' },
+  { seuil:1500,  nom:'Pâte',         emoji:'🥣' },
+  { seuil:3500,  nom:'Mie',          emoji:'🍞' },
+  { seuil:7000,  nom:'Croûte dorée', emoji:'🥖' },
+  { seuil:12000, nom:'Brioche d’or', emoji:'🥇' },
+];
+
+/* Les tenues sont des accessoires posés sur la mascotte. La mascotte est une
+   image, pas un dessin vectoriel : on ne peut pas la redessiner, mais on peut
+   lui poser quelque chose dessus. */
+const TENUES = [
+  { id:'aucune',   nom:'Sans rien',    prix:0,    emoji:null },
+  { id:'noeud',    nom:'Le nœud',      prix:300,  emoji:'🎀' },
+  { id:'lunettes', nom:'Les lunettes', prix:500,  emoji:'🕶️' },
+  { id:'casquette',nom:'La casquette', prix:800,  emoji:'🧢' },
+  { id:'chapeau',  nom:'Le chapeau',   prix:1500, emoji:'🎩' },
+  { id:'couronne', nom:'La couronne',  prix:3000, emoji:'👑' },
+];
+const tenueDef = id => TENUES.find(t => t.id === id) || TENUES[0];
+
+const jourSuivant = k => {
+  const d = new Date(k + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  return dateKey(d);
+};
+
+/* Ce que rapporte chaque journée, et la série telle qu'elle est réellement :
+   un jour ne compte que s'il porte quelque chose — ouvrir l'app ne suffit pas. */
+function detailPoints(){
+  const parDate = {};
+  (state.entries.repas || []).forEach(e => { (parDate[e.date] = parDate[e.date] || []).push(e); });
+
+  const notes = new Set(Object.keys(parDate));
+  Object.keys(state.water || {}).forEach(k => { if (state.water[k] > 0) notes.add(k); });
+  Object.keys(state.weightHistory || {}).forEach(k => { if (state.weightHistory[k] != null) notes.add(k); });
+
+  const proteges = (state.recompenses && state.recompenses.jokersPoses) || {};
+  const toutes = Array.from(new Set([...notes, ...Object.keys(proteges)])).sort();
+
+  const g = state.macroGoals || {};
+  const objEau = hydrationGoalMl();
+  const jours = {};
+  let total = 0, serie = 0, precedent = null, dernierNote = null;
+
+  toutes.forEach(k => {
+    serie = (precedent && jourSuivant(precedent) === k) ? serie + 1 : 1;
+    precedent = k;
+    // un jour rattrapé par un joker tient la série, mais ne rapporte rien
+    if (!notes.has(k)) return;
+    dernierNote = k;
+
+    const entrees = parDate[k] || [];
+    const types = new Set(entrees.map(e => e.fields && e.fields.type).filter(Boolean));
+    const somme = champ => entrees.reduce((acc, e) => acc + (parseFloat(e.fields[champ]) || 0), 0);
+
+    const d = {
+      repas:   Math.min(types.size, MEAL_TYPES.length) * BAREME.repas,
+      journee: types.size >= MEAL_TYPES.length ? BAREME.journee : 0,
+      // « atteint » et non « en dessous » : l'app ne paie jamais pour manger moins
+      cal:     (g.calories  && statAtteint('cal',  somme('calories'),  g.calories))  ? BAREME.cal  : 0,
+      prot:    (g.proteines && statAtteint('prot', somme('proteines'), g.proteines)) ? BAREME.prot : 0,
+      eau:     statAtteint('eau', state.water[k] || 0, objEau) ? BAREME.eau : 0,
+      pesee:   (state.weightHistory[k] != null) ? BAREME.pesee : 0,
+      serieJours: serie,
+    };
+    d.serie = Math.min(serie * BAREME.serie, BAREME.serieMax);
+    d.total = d.repas + d.journee + d.cal + d.prot + d.eau + d.pesee + d.serie;
+    jours[k] = d;
+    total += d.total;
+  });
+
+  // la série ne vaut que si elle touche encore aujourd'hui ou hier
   const aujourdhui = todayKey();
-  const s = state.streak || { dernier: null, jours: 0, record: 0 };
-  if (s.dernier === aujourdhui) return;
+  const vivante = !!precedent && (precedent === aujourdhui || jourSuivant(precedent) === aujourdhui);
+  const depense = (state.recompenses && state.recompenses.depense) || 0;
+  return {
+    jours, total, depense,
+    miettes: Math.max(0, total - depense),
+    serie: vivante ? serie : 0,
+    dernier: precedent,
+    dernierNote,
+  };
+}
 
-  const hier = new Date();
-  hier.setDate(hier.getDate() - 1);
-  const continuee = s.dernier === dateKey(hier);
-  const ancienne = s.jours || 0;
+function niveauPour(total){
+  let i = 0;
+  NIVEAUX.forEach((n, k) => { if (total >= n.seuil) i = k; });
+  return { rang: i + 1, ...NIVEAUX[i], suivant: NIVEAUX[i + 1] || null };
+}
 
-  s.jours = continuee ? ancienne + 1 : 1;
-  s.dernier = aujourdhui;
-  s.record = Math.max(s.record || 0, s.jours);
-  state.streak = s;
+/* Le seul jour qu'un joker peut rattraper : celui qui manque entre la dernière
+   journée notée et aujourd'hui, et seulement s'il n'en manque qu'un. */
+function jourRattrapable(p){
+  if (!p.dernier) return null;
+  const manquant = jourSuivant(p.dernier);
+  if (manquant >= todayKey()) return null;
+  return jourSuivant(manquant) === todayKey() ? manquant : null;
+}
 
-  // De quoi jouer l'animation du jour, une seule fois par journée.
-  if (continuee && s.jours >= 2){
-    state.serieFx = { type: 'serie', jours: s.jours, record: s.record };
-  } else if (!continuee && ancienne >= 2){
-    state.serieFx = { type: 'eteinte', perdue: ancienne };
+async function sauverRecompenses(){
+  try { await window.storage.set('recompenses', JSON.stringify(state.recompenses), true); }
+  catch(e){ showToast('Erreur de sauvegarde'); }
+}
+
+// Recalcule tout et remet la série d'accord avec les données réelles.
+function majEtatPoints(){
+  const p = detailPoints();
+  state.pts = p;
+  if (state.streak){
+    state.streak.jours = p.serie;
+    state.streak.record = Math.max(state.streak.record || 0, p.serie);
+  }
+  return p;
+}
+
+/* Le « +X » qui s'envole : on compare le total au dernier total affiché.
+   Comme les points se recalculent, aucun branchement n'est nécessaire sur
+   chaque action — un repas ajouté, de l'eau bue ou une pesée se voient tout
+   seuls au rendu suivant. */
+let ptsAffiches = null;
+function signalerGain(){
+  const p = majEtatPoints();
+
+  // la pastille suit tout de suite, même quand rien n'est redessiné
+  const nb = document.querySelector('#serieBadge .serie-nombre');
+  if (nb){
+    const serie = (state.streak && state.streak.jours) || 0;
+    nb.textContent = serie || statNb(p.miettes);
+    const flamme = document.querySelector('#serieBadge .serie-flamme');
+    if (flamme) flamme.textContent = serie ? '🔥' : '🍞';
   }
 
+  if (ptsAffiches === null){ ptsAffiches = p.total; return; }
+  const gain = p.total - ptsAffiches;
+  ptsAffiches = p.total;
+  if (gain <= 0) return;
+  const el = document.createElement('div');
+  el.className = 'gain-points';
+  el.textContent = `+${gain} 🍞`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1700);
+}
+
+/* La série suit les journées réellement notées. Avant, elle montait à la
+   simple ouverture de l'app : elle récompensait le fait de lancer BRIO, pas
+   celui de noter quoi que ce soit. */
+async function majSerie(){
+  const aujourdhui = todayKey();
+  const ancien = state.streak || { dernier: null, jours: 0, record: 0 };
+  const p = detailPoints();
+
+  const s = {
+    dernier: p.dernierNote,
+    jours: p.serie,
+    record: Math.max(ancien.record || 0, p.serie),
+    vu: ancien.vu || null,
+  };
+
+  // L'animation du jour ne se joue qu'une fois par journée.
+  if (s.vu !== aujourdhui){
+    s.vu = aujourdhui;
+    if (p.serie >= 2){
+      state.serieFx = { type: 'serie', jours: p.serie, record: s.record };
+    } else if ((ancien.jours || 0) >= 2 && p.serie < ancien.jours){
+      state.serieFx = { type: 'eteinte', perdue: ancien.jours };
+    }
+  }
+
+  state.streak = s;
   try { await window.storage.set('streak', JSON.stringify(s), true); } catch(e){}
 }
 
@@ -6393,7 +6690,13 @@ function bulleBriocheHtml(msg){
   briocheDernierMessage = msg.texte;
   return `
     <div class="brioche-bulle humeur-${msg.humeur} ${nouveau ? 'nouveau' : ''} ${premiere ? 'arrivee' : ''}" role="status">
-      <img class="brioche-tete" src="${BRIOCHE_SRC}" alt="Brioche">
+      <span class="brioche-tenue brioche-tete-tenue">
+        <img class="brioche-tete" src="${BRIOCHE_SRC}" alt="Brioche">
+        ${(() => {
+          const t = tenueDef((state.recompenses || {}).tenue);
+          return t.emoji ? `<span class="brioche-accessoire tenue-${t.id}" aria-hidden="true">${t.emoji}</span>` : '';
+        })()}
+      </span>
       <div class="brioche-texte">${msg.texte}</div>
     </div>`;
 }
@@ -6583,11 +6886,19 @@ function renderRepasDashboard(){
         <h1>👋 Bonjour ${state.userName}!</h1>
         <p class="message-jour">${messageDuJour()}</p>
       </div>
-      ${state.streak && state.streak.jours ? `
-        <button class="serie-pastille" id="serieBadge" title="${state.streak.jours} jour${state.streak.jours > 1 ? 's' : ''} d'affilée${state.streak.record > state.streak.jours ? ` — record : ${state.streak.record}` : ''}">
-          <span class="serie-flamme">🔥</span>
-          <span class="serie-nombre">${state.streak.jours}</span>
-        </button>` : ''}
+      ${(() => {
+        // Toujours présente : c'est la porte des récompenses, série ou pas.
+        const serie = (state.streak && state.streak.jours) || 0;
+        const miettes = (state.pts && state.pts.miettes) || 0;
+        const titre = serie
+          ? `${serie} jour${serie > 1 ? 's' : ''} d'affilée — voir tes récompenses`
+          : 'Tes récompenses';
+        return `
+        <button class="serie-pastille" id="serieBadge" title="${titre}" aria-label="${titre}">
+          <span class="serie-flamme">${serie ? '🔥' : '🍞'}</span>
+          <span class="serie-nombre">${serie || statNb(miettes)}</span>
+        </button>`;
+      })()}
     </div>
 
     <div class="week-carousel-wrap" id="weekCarouselWrap">
@@ -6679,14 +6990,16 @@ function renderRepasDashboard(){
   state.serieFx = null;
   brancherSerieFx(document.getElementById('serieFx'));
 
-  // la pastille rejoue l'animation à la demande
+  // la pastille ouvre les récompenses
   const badge = document.getElementById('serieBadge');
   if (badge) badge.onclick = () => {
     if (document.getElementById('serieFx')) return;
-    const s = state.streak || {};
-    app.insertAdjacentHTML('beforeend', serieFxHtml({ type:'serie', jours: s.jours || 1, record: s.record || 1 }, true));
-    brancherSerieFx(document.getElementById('serieFx'), true);
+    state.screen = 'recompenses';
+    navFade = true;
+    render();
   };
+
+  signalerGain();
 
   const promptBackdrop = document.getElementById('repasPromptBackdrop');
   if (promptBackdrop){
@@ -7307,6 +7620,7 @@ function updateHydrationUI(){
 
   refreshDayDots();
   rafraichirBrioche();
+  signalerGain();
 }
 
 // Met à jour la bulle de Brioche sans redessiner tout l'écran
@@ -7798,6 +8112,7 @@ function renderProgres(){
     ` : '');
 
   bindBottomNav('progres');
+  signalerGain();
 
   const shouldSkipMarkerAnim = skipImcAnim;
   feuillesDejaOuvertes = { poids: !!isEditing, detail: !!state.showWeightDetail, historique: !!state.showWeightHistoryList };
@@ -9054,6 +9369,164 @@ function ouvrirPseudo(){
   document.addEventListener('keydown', surEchap);
   champ.focus();
   champ.select();
+}
+
+/* ---------------- écran Récompenses ---------------- */
+
+// La mascotte, avec l'accessoire porté posé dessus.
+function briocheHabillee(classe){
+  const tenue = tenueDef((state.recompenses || {}).tenue);
+  return `<span class="brioche-tenue ${classe || ''}">
+    ${photoBrioche('')}
+    ${tenue.emoji ? `<span class="brioche-accessoire tenue-${tenue.id}" aria-hidden="true">${tenue.emoji}</span>` : ''}
+  </span>`;
+}
+
+function renderRecompenses(){
+  const p = state.pts || majEtatPoints();
+  const r = state.recompenses;
+  const n = niveauPour(p.total);
+  const jour = p.jours[todayKey()] || null;
+
+  const versSuivant = n.suivant ? n.suivant.seuil - p.total : 0;
+  const pct = n.suivant
+    ? Math.max(0, Math.min(100, ((p.total - n.seuil) / (n.suivant.seuil - n.seuil)) * 100))
+    : 100;
+
+  const ligne = (fait, lab, val) => `
+    <div class="rec-ligne ${fait ? 'faite' : ''}">
+      <span class="rec-coche" aria-hidden="true">${fait ? '\u2713' : ''}</span>
+      <span class="rec-lab">${lab}</span>
+      <span class="rec-pts">${val}</span>
+    </div>`;
+
+  const nbRepas = jour ? jour.repas / BAREME.repas : 0;
+  const detailJour = `
+    ${ligne(nbRepas > 0, `Repas notés (${nbRepas} sur ${MEAL_TYPES.length})`, `+${jour ? jour.repas : 0}`)}
+    ${ligne(!!(jour && jour.journee), 'Les quatre repas', `+${jour ? jour.journee : 0}`)}
+    ${ligne(!!(jour && jour.cal), 'Calories dans la fourchette', `+${jour ? jour.cal : 0}`)}
+    ${ligne(!!(jour && jour.prot), 'Objectif protéines', `+${jour ? jour.prot : 0}`)}
+    ${ligne(!!(jour && jour.eau), 'Objectif eau', `+${jour ? jour.eau : 0}`)}
+    ${ligne(!!(jour && jour.pesee), 'Pesée du jour', `+${jour ? jour.pesee : 0}`)}
+    ${ligne(!!(jour && jour.serie), `Série de ${jour ? jour.serieJours : 0} jour${jour && jour.serieJours > 1 ? 's' : ''}`, `+${jour ? jour.serie : 0}`)}
+  `;
+
+  const tenuesHtml = TENUES.map(t => {
+    const possedee = r.tenues.includes(t.id);
+    const portee = r.tenue === t.id;
+    const abordable = p.miettes >= t.prix;
+    return `
+      <button class="rec-tenue ${portee ? 'portee' : ''} ${possedee ? 'possedee' : ''}"
+        data-tenue="${t.id}" ${(!possedee && !abordable) ? 'disabled' : ''}>
+        <span class="rec-tenue-vignette">${t.emoji || '\u2014'}</span>
+        <span class="rec-tenue-nom">${t.nom}</span>
+        <span class="rec-tenue-prix">${portee ? 'Portée' : possedee ? 'Mettre' : `${t.prix} 🍞`}</span>
+      </button>`;
+  }).join('');
+
+  const rattrapable = jourRattrapable(p);
+
+  app.innerHTML = `
+    <div class="screen-content ${consumeFadeClass()}">
+    <div class="cat-header">
+      <button class="back-btn" id="recBack">${ICONS.back}</button>
+      <h1 style="font-size:18px;">Récompenses</h1>
+    </div>
+
+    <div class="recap-card rec-hero">
+      ${briocheHabillee('grande')}
+      <div class="rec-niveau">${n.emoji} ${n.nom}</div>
+      <div class="rec-barre"><span style="width:${pct}%"></span></div>
+      <div class="rec-vers">${n.suivant
+        ? `Encore ${statNb(versSuivant)} points avant «\u00a0${n.suivant.nom}\u00a0»`
+        : 'Dernier niveau atteint. Chapeau.'}</div>
+      <div class="rg-hero-stats">
+        <div class="rg-stat"><b>${statNb(p.total)}</b><span>Points gagnés</span></div>
+        <div class="rg-stat"><b>${statNb(p.miettes)}</b><span>Miettes 🍞</span></div>
+        <div class="rg-stat"><b>${p.serie}</b><span>Jour${p.serie > 1 ? 's' : ''} d\u2019affilée</span></div>
+      </div>
+    </div>
+
+    <div class="rg-section">
+      <div class="rg-section-titre">Aujourd\u2019hui</div>
+      <div class="recap-card rec-jour">
+        ${detailJour}
+        <div class="rec-total">
+          <span>Total du jour</span>
+          <b>+${jour ? jour.total : 0}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="rg-section">
+      <div class="rg-section-titre">Les tenues de Brioche</div>
+      <div class="rec-tenues">${tenuesHtml}</div>
+    </div>
+
+    <div class="rg-section">
+      <div class="rg-section-titre">Joker de série</div>
+      <div class="recap-card rec-joker">
+        <p class="rec-joker-txt">
+          Un joker rattrape une journée oubliée et garde ta série intacte.
+          Tu en as <b>${r.jokers}</b>.
+        </p>
+        ${rattrapable ? `
+          <p class="rec-joker-alerte">
+            Il manque le ${shortDateFR(rattrapable)}. ${r.jokers > 0
+              ? 'Un joker peut le rattraper.'
+              : 'Il te faudrait un joker.'}
+          </p>
+          ${r.jokers > 0 ? `<button class="btn-primary" id="recPoser">Rattraper ce jour</button>` : ''}
+        ` : ''}
+        <button class="btn-secondary" id="recAcheterJoker" ${p.miettes < PRIX_JOKER ? 'disabled' : ''}>
+          Acheter un joker \u2014 ${PRIX_JOKER} 🍞
+        </button>
+      </div>
+    </div>
+    </div>
+  `;
+
+  document.getElementById('recBack').onclick = () => {
+    state.screen = 'category';
+    navFade = true;
+    render();
+  };
+
+  app.querySelectorAll('.rec-tenue').forEach(btn => {
+    btn.onclick = async () => {
+      const t = tenueDef(btn.dataset.tenue);
+      if (!r.tenues.includes(t.id)){
+        if (p.miettes < t.prix) return;
+        r.tenues.push(t.id);
+        r.depense += t.prix;
+        showToast('Tenue débloquée \u2728');
+      }
+      r.tenue = t.id;
+      await sauverRecompenses();
+      render();
+    };
+  });
+
+  const acheter = document.getElementById('recAcheterJoker');
+  if (acheter) acheter.onclick = async () => {
+    if (p.miettes < PRIX_JOKER) return;
+    r.depense += PRIX_JOKER;
+    r.jokers += 1;
+    await sauverRecompenses();
+    showToast('Joker ajouté');
+    render();
+  };
+
+  const poser = document.getElementById('recPoser');
+  if (poser) poser.onclick = async () => {
+    if (!rattrapable || r.jokers <= 0) return;
+    r.jokers -= 1;
+    r.jokersPoses[rattrapable] = true;
+    await sauverRecompenses();
+    await majSerie();
+    showToast('Série rattrapée');
+    render();
+  };
 }
 
 function renderReglages(){
