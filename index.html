@@ -2248,14 +2248,16 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .brioche-bulle.humeur-bravo .brioche-texte{background:rgba(222,247,229,.55);color:#2E7D4F;}
   .brioche-bulle.humeur-bravo .brioche-texte::before{background:rgba(222,247,229,.55);}
   /* animations en translation et opacité seulement : l'image reste nette */
-  .brioche-bulle.arrivee .brioche-tete{animation:briocheArrivee .5s cubic-bezier(.34,1.56,.64,1);}
+  /* le saut porte sur le conteneur, pas sur l'image : l'accessoire porté
+     monte avec elle au lieu de rester en l'air */
+  .brioche-bulle.arrivee .brioche-tete-tenue{animation:briocheArrivee .5s cubic-bezier(.34,1.56,.64,1);}
   .brioche-bulle.arrivee .brioche-texte{animation:briocheBulle .4s .12s ease-out both;}
-  .brioche-bulle.nouveau .brioche-tete{animation:briocheSaut .6s ease-out;}
+  .brioche-bulle.nouveau .brioche-tete-tenue{animation:briocheSaut .6s ease-out;}
   .brioche-bulle.nouveau .brioche-texte{animation:briocheBulle .35s ease-out;}
   @keyframes briocheArrivee{from{transform:translateY(12px);opacity:0;}to{transform:translateY(0);opacity:1;}}
   @keyframes briocheSaut{0%,100%{transform:translateY(0);}30%{transform:translateY(-10px);}55%{transform:translateY(0);}75%{transform:translateY(-3px);}}
   @keyframes briocheBulle{from{opacity:.25;}to{opacity:1;}}
-  @media (prefers-reduced-motion: reduce){ .brioche-tete,.brioche-texte{animation:none !important;} }
+  @media (prefers-reduced-motion: reduce){ .brioche-tete,.brioche-tete-tenue,.brioche-texte{animation:none !important;} }
 
   /* ---------- feuille de détail : même fond et même verre que l'écran du jour ---------- */
   .stat-sheet{
