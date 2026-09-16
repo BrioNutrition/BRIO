@@ -2372,6 +2372,8 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .compte-note{font-size:12.5px;line-height:1.45;color:#8A82A0;text-align:center;margin:16px auto 0;max-width:300px;}
 
   /* ---------- écran Récompenses ---------- */
+  /* le titre reprend celui de l'accueil, au pixel et à la couleur près */
+  .cat-header h1.rec-titre{color:#1C1730;font-size:22px;font-weight:600;}
   .rec-hero{margin-top:30px;padding:24px 18px 18px;text-align:center;overflow:visible;}
   /* L'accessoire se pose sur la mascotte : elle est en image, on ne peut pas
      la redessiner, mais on peut lui mettre quelque chose dessus. La taille du
@@ -3435,6 +3437,7 @@ html.sombre .rg-stat span{color:#AAA5B7;}
   color:#8A82A0;margin:0 0 9px 6px;
 }
 html.sombre .rg-section-titre{color:#9C95AE;}
+html.sombre .cat-header h1.rec-titre{color:#EDECF4}
 html.sombre .rec-niveau{color:#EDECF4}
 html.sombre .rec-vers{color:#AAA5B7}
 html.sombre .rec-barre{background:rgba(169,141,240,.2)}
@@ -9435,7 +9438,7 @@ function renderRecompenses(){
     <div class="screen-content ${consumeFadeClass()}">
     <div class="cat-header">
       <button class="back-btn" id="recBack">${ICONS.back}</button>
-      <h1 style="font-size:18px;">Récompenses</h1>
+      <h1 class="rec-titre">Récompenses</h1>
     </div>
 
     <div class="recap-card rec-hero">
