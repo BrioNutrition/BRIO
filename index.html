@@ -1667,14 +1667,20 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     font-size:13px;color:#8A82A0;line-height:1.45;margin:8px auto 20px;max-width:300px;
   }
   .repas-prompt-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  /* mêmes fond, flou et contour que les cases des autres écrans : ces quatre
+     boutons étaient les seuls à rester opaques au milieu d'une feuille en verre */
   .repas-prompt-btn{
     display:flex;flex-direction:column;align-items:center;gap:7px;
     padding:16px 8px;border-radius:var(--radius-md);
-    background:rgba(255,255,255,.6);border:1.5px solid #DCC6F2;
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
     transition:background .16s ease,border-color .16s ease,transform .12s ease;
   }
   .repas-prompt-btn:active{transform:scale(.97);}
-  .repas-prompt-btn:hover{background:#fff;border-color:#7B4FE0;}
+  /* au survol le verre s'éclaircit, au lieu de devenir blanc plein */
+  .repas-prompt-btn:hover{background:rgba(255,255,255,.72);border-color:#7B4FE0;}
   .repas-prompt-emoji{font-size:24px;line-height:1;}
   .repas-prompt-label{font-size:13px;font-weight:700;color:#1C1730;}
   .repas-prompt-plus-tard{
@@ -2852,8 +2858,8 @@ html.sombre .serie-fx-nombre{color:#EDECF4}
 html.sombre .serie-fx-texte{color:#D7D1E0}
 html.sombre .repas-prompt-titre{color:#EDECF4}
 html.sombre .repas-prompt-sous{color:#AAA5B7}
-html.sombre .repas-prompt-btn{background:rgba(46,37,72,0.76);border:1.5px solid #47335B}
-html.sombre .repas-prompt-btn:hover{background:#2E2548;border-color:#7B4FE0}
+html.sombre .repas-prompt-btn{background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112)}
+html.sombre .repas-prompt-btn:hover{background:rgba(46,37,72,0.8);border-color:#7B4FE0}
 html.sombre .repas-prompt-label{color:#EDECF4}
 html.sombre .repas-prompt-plus-tard{background:none;border:none;color:#AAA5B7}
 html.sombre .repas-rappel{background:rgba(253,149,61,0.192);border:1.5px solid rgba(253,149,61,.45);color:#FD953D}
