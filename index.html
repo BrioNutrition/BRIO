@@ -1321,9 +1321,11 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .meal-form{padding:4px 0 16px;display:flex;flex-direction:column;gap:8px;}
   .meal-form input{
     border:1.5px solid var(--line);background:var(--bg);border-radius:var(--radius-sm);
+    backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
     padding:10px 12px;font-size:14px;color:var(--ink);outline:none;width:100%;
   }
-  .repas-theme .meal-form input{border-color:#DCC6F2;background:#FFFFFF;color:#1C1730;}
+  .repas-theme .meal-form input{border-color:#DCC6F2;background:rgba(255,255,255,.55);color:#1C1730;}
   .meal-form input[readonly]{opacity:.6;cursor:not-allowed;}
   .meal-form input.input-error{border-color:#E5484D;background:rgba(229,72,77,.08);}
   .repas-theme .meal-form input.input-error{border-color:#E5484D;background:rgba(229,72,77,.08);}
@@ -2572,7 +2574,10 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .food-search-ligne input{flex:1;min-width:0;}
   .food-scan{
     flex-shrink:0;width:46px;border-radius:var(--radius-sm);
-    border:1px solid #DCC6F2;background:#FFFFFF;color:#7B4FE0;
+    border:1px solid #DCC6F2;color:#7B4FE0;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
     display:flex;align-items:center;justify-content:center;cursor:pointer;
   }
   .food-scan svg{width:22px;height:22px;}
@@ -2580,14 +2585,22 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .food-onglets{display:flex;gap:6px;margin-top:8px;}
   .food-onglet{
     flex:1;padding:7px 6px;border-radius:999px;cursor:pointer;
-    border:1px solid #DCC6F2;background:#FFFFFF;color:#5B4A78;
+    border:1px solid #DCC6F2;color:#5B4A78;
     font-size:12px;font-weight:700;
+    background:rgba(255,255,255,.55);
+    backdrop-filter:blur(14px) saturate(160%);
+    -webkit-backdrop-filter:blur(14px) saturate(160%);
   }
   .food-onglet.actif{background:#7B4FE0;border-color:#7B4FE0;color:#FFFFFF;}
   /* une ligne = une seule carte : l'aliment à gauche, l'étoile intégrée à droite */
+  /* une ligne d'aliment est une carte : même verre que celles des tableaux */
   .aliment-ligne{
     display:flex;align-items:stretch;overflow:hidden;flex-shrink:0;
-    border:1px solid #DCC6F2;background:#FFFFFF;border-radius:var(--radius-sm);
+    border-radius:var(--radius-sm);
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
     transition:border-color .25s ease;
   }
   .aliment-ligne.favori{border-color:#EBCB7A;}
@@ -2791,7 +2804,7 @@ html.sombre .repas-theme .meal-entry-macros{color:#AAA5B7}
 html.sombre .meal-entry-delete{background:none;border:none;color:var(--muted)}
 html.sombre .repas-theme .meal-entry-delete{color:#9B8AB2}
 html.sombre .meal-form input{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
-html.sombre .repas-theme .meal-form input{border-color:#47335B;background:#2E2548;color:#EDECF4}
+html.sombre .repas-theme .meal-form input{border-color:#47335B;background:rgba(46,37,72,0.705);color:#EDECF4}
 html.sombre .meal-form input.input-error{border-color:#E5484D;background:rgba(229,72,77,0.128)}
 html.sombre .repas-theme .meal-form input.input-error{border-color:#E5484D;background:rgba(229,72,77,0.128)}
 html.sombre .repas-theme .meal-form .btn-primary{background:#7B4FE0;color:#fff}
@@ -3084,10 +3097,10 @@ html.sombre .photo-sheet .btn-primary{background:#7B4FE0;color:#fff}
 html.sombre .photo-lien{background:none;border:none;color:#AAA5B7}
 html.sombre .photo-note{color:#9991AB}
 html.sombre .photo-erreur{color:#FD953D;background:rgba(253,149,61,0.16);border:1.5px solid rgba(253,149,61,.35)}
-html.sombre .food-scan{border:1px solid #47335B;background:#2E2548;color:#A98DF0}
-html.sombre .food-onglet{border:1px solid #47335B;background:#2E2548;color:#D7D1E0}
+html.sombre .food-scan{border:1px solid #47335B;background:rgba(46,37,72,0.705);color:#A98DF0}
+html.sombre .food-onglet{border:1px solid #47335B;background:rgba(46,37,72,0.705);color:#D7D1E0}
 html.sombre .food-onglet.actif{background:#7B4FE0;border-color:#7B4FE0;color:#FFFFFF}
-html.sombre .aliment-ligne{border:1px solid #47335B;background:#2E2548}
+html.sombre .aliment-ligne{border:1px solid rgba(255,255,255,0.112);background:rgba(46,37,72,0.595)}
 html.sombre .aliment-ligne.favori{border-color:#EBCB7A}
 html.sombre .repas-theme .aliment-ligne .food-result{border:none;background:transparent}
 html.sombre .food-fav{border:none;background:transparent;color:#9B8AB2}
