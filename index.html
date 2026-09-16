@@ -1652,9 +1652,17 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     font-size:24px;font-weight:800;color:#1C1730;margin-top:26px;
     animation:serieTexte .5s ease .5s both;
   }
+  /* Ce que la série rapporte chaque jour : au lancement, le total du jour est
+     encore vide, alors que ce chiffre-là a du sens à tout moment. */
+  .serie-fx-points{
+    font-family:var(--police-titre);font-weight:700;font-size:17px;
+    color:#D9622A;background:rgba(217,98,42,.12);
+    border-radius:999px;padding:6px 14px;margin-top:12px;
+    animation:serieTexte .5s ease .6s both;
+  }
   .serie-fx-texte{
     font-size:14px;font-weight:600;color:#5B4A78;line-height:1.5;
-    max-width:280px;margin-top:8px;text-wrap:balance;
+    max-width:280px;margin-top:12px;text-wrap:balance;
     animation:serieTexte .5s ease .68s both;
   }
   .eteinte-fx .serie-fx-nombre{margin-top:34px;animation-delay:1.5s;}
@@ -2995,6 +3003,7 @@ html.sombre .serie-fx-fermer{color:#D7D1E0;background:rgba(46,37,72,0.595);borde
 html.sombre .serie-fx-fermer:hover{background:rgba(46,37,72,0.925)}
 html.sombre .serie-fx-halo{background:radial-gradient(circle, rgba(255,138,20,.38), rgba(255,190,60,0) 68%)}
 html.sombre .serie-fx-nombre{color:#EDECF4}
+html.sombre .serie-fx-points{color:#FD953D;background:rgba(253,149,61,.15)}
 html.sombre .serie-fx-texte{color:#D7D1E0}
 html.sombre .repas-prompt-titre{color:#EDECF4}
 html.sombre .repas-prompt-sous{color:#AAA5B7}
@@ -5200,6 +5209,9 @@ function serieFxHtml(fx, manuel){
         <div class="serie-fx-halo"></div>
         <div class="serie-fx-flamme allumee">🔥</div>
         <div class="serie-fx-nombre">${premier ? 'Premier jour' : `${fx.jours} jours d'affilée`}</div>
+        ${state.options && state.options.points ? `
+          <div class="serie-fx-points">+${Math.min(Math.max(fx.jours, 1) * BAREME.serie, BAREME.serieMax)} 🍞 par jour</div>
+        ` : ''}
         <div class="serie-fx-texte">${premier
           ? 'La flamme est allumée. Reviens demain pour l\u2019entretenir.'
           : (fx.jours === fx.record
