@@ -1076,9 +1076,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .serie-pastille:active{transform:scale(.94);}
   /* Deux pastilles côte à côte : le diamant d'abord, la flamme ensuite. */
   .top-pastilles{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .pastille-brioche{padding:4px 7px;}
-  .pastille-brioche .brioche-tenue{width:26px;}
-  .pastille-brioche .brioche-tenue img{width:26px;height:26px;border-radius:9px;}
+  .pastille-brioche{padding:7px 10px;}
   .serie-flamme{font-size:16px;line-height:1;}
   .serie-nombre{font-size:16px;font-weight:800;color:#D9622A;line-height:1;}
   .repas-theme .repas-top h1{color:#1C1730;font-size:22px;font-weight:600;}
@@ -6916,7 +6914,7 @@ function renderRepasDashboard(){
         ${state.options.points ? `
           <button class="serie-pastille pastille-brioche" id="recompensesBadge"
             title="Tes récompenses" aria-label="Tes récompenses">
-            ${briocheHabillee()}
+            <span class="serie-flamme">🍞</span>
           </button>` : ''}
         ${state.streak && state.streak.jours ? `
           <button class="serie-pastille" id="serieBadge" title="${state.streak.jours} jour${state.streak.jours > 1 ? 's' : ''} d'affilée${state.streak.record > state.streak.jours ? ` — record : ${state.streak.record}` : ''}">
