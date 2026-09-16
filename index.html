@@ -1074,6 +1074,9 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
   .serie-pastille{cursor:pointer;transition:transform .12s ease,background .16s ease;}
   .serie-pastille:active{transform:scale(.94);}
+  /* Deux pastilles côte à côte : le diamant d'abord, la flamme ensuite. */
+  .top-pastilles{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .pastille-diamant{padding:7px 10px;}
   .serie-flamme{font-size:16px;line-height:1;}
   .serie-nombre{font-size:16px;font-weight:800;color:#D9622A;line-height:1;}
   .repas-theme .repas-top h1{color:#1C1730;font-size:22px;font-weight:600;}
@@ -5085,14 +5088,9 @@ let ptsAffiches = null;
 function signalerGain(){
   const p = majEtatPoints();
 
-  // la pastille suit tout de suite, même quand rien n'est redessiné
+  // la flamme suit tout de suite, même quand rien n'est redessiné
   const nb = document.querySelector('#serieBadge .serie-nombre');
-  if (nb){
-    const serie = (state.streak && state.streak.jours) || 0;
-    nb.textContent = serie || statNb(p.miettes);
-    const flamme = document.querySelector('#serieBadge .serie-flamme');
-    if (flamme) flamme.textContent = serie ? '🔥' : '🍞';
-  }
+  if (nb) nb.textContent = (state.streak && state.streak.jours) || 0;
 
   if (ptsAffiches === null){ ptsAffiches = p.total; return; }
   const gain = p.total - ptsAffiches;
@@ -6886,19 +6884,17 @@ function renderRepasDashboard(){
         <h1>👋 Bonjour ${state.userName}!</h1>
         <p class="message-jour">${messageDuJour()}</p>
       </div>
-      ${(() => {
-        // Toujours présente : c'est la porte des récompenses, série ou pas.
-        const serie = (state.streak && state.streak.jours) || 0;
-        const miettes = (state.pts && state.pts.miettes) || 0;
-        const titre = serie
-          ? `${serie} jour${serie > 1 ? 's' : ''} d'affilée — voir tes récompenses`
-          : 'Tes récompenses';
-        return `
-        <button class="serie-pastille" id="serieBadge" title="${titre}" aria-label="${titre}">
-          <span class="serie-flamme">${serie ? '🔥' : '🍞'}</span>
-          <span class="serie-nombre">${serie || statNb(miettes)}</span>
-        </button>`;
-      })()}
+      <div class="top-pastilles">
+        <button class="serie-pastille pastille-diamant" id="recompensesBadge"
+          title="Tes récompenses" aria-label="Tes récompenses">
+          <span class="serie-flamme">💎</span>
+        </button>
+        ${state.streak && state.streak.jours ? `
+          <button class="serie-pastille" id="serieBadge" title="${state.streak.jours} jour${state.streak.jours > 1 ? 's' : ''} d'affilée${state.streak.record > state.streak.jours ? ` — record : ${state.streak.record}` : ''}">
+            <span class="serie-flamme">🔥</span>
+            <span class="serie-nombre">${state.streak.jours}</span>
+          </button>` : ''}
+      </div>
     </div>
 
     <div class="week-carousel-wrap" id="weekCarouselWrap">
@@ -6990,9 +6986,18 @@ function renderRepasDashboard(){
   state.serieFx = null;
   brancherSerieFx(document.getElementById('serieFx'));
 
-  // la pastille ouvre les récompenses
+  // la flamme rejoue l'animation de la série en cours
   const badge = document.getElementById('serieBadge');
   if (badge) badge.onclick = () => {
+    if (document.getElementById('serieFx')) return;
+    const s = state.streak || {};
+    app.insertAdjacentHTML('beforeend', serieFxHtml({ type:'serie', jours: s.jours || 1, record: s.record || 1 }, true));
+    brancherSerieFx(document.getElementById('serieFx'), true);
+  };
+
+  // le diamant mène aux points, aux niveaux et aux tenues
+  const diamant = document.getElementById('recompensesBadge');
+  if (diamant) diamant.onclick = () => {
     if (document.getElementById('serieFx')) return;
     state.screen = 'recompenses';
     navFade = true;
