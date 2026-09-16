@@ -2247,15 +2247,54 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .brioche-bulle.humeur-alerte .brioche-texte::before{background:rgba(255,233,214,.5);}
   .brioche-bulle.humeur-bravo .brioche-texte{background:rgba(222,247,229,.55);color:#2E7D4F;}
   .brioche-bulle.humeur-bravo .brioche-texte::before{background:rgba(222,247,229,.55);}
-  /* animations en translation et opacité seulement : l'image reste nette */
-  .brioche-bulle.arrivee .brioche-tete{animation:briocheArrivee .5s cubic-bezier(.34,1.56,.64,1);}
+  /* Animations en translation et opacité seulement : l'image reste nette.
+     Elles portent sur le conteneur et non sur l'image, pour que l'accessoire
+     de Brioche bouge avec elle plutôt que de rester en l'air.
+
+     L'humeur du message choisit la façon dont elle bouge, rangée dans
+     « --humeur » : la respiration au repos, la joie quand tout est atteint,
+     l'appel quand il manque quelque chose. Les entrées ponctuelles se posent
+     devant, et la boucle reprend la main une fois qu'elles sont finies. */
+  .brioche-bulle .brioche-tete-tenue{
+    --humeur:briocheRespire 5s ease-in-out infinite;
+    animation:var(--humeur);
+  }
+  .brioche-bulle.humeur-bravo .brioche-tete-tenue{--humeur:briocheJoie 4.5s ease-in-out infinite;}
+  .brioche-bulle.humeur-alerte .brioche-tete-tenue{--humeur:briocheAppel 4s ease-in-out infinite;}
+  .brioche-bulle.arrivee .brioche-tete-tenue{animation:briocheArrivee .5s cubic-bezier(.34,1.56,.64,1), var(--humeur) .5s;}
   .brioche-bulle.arrivee .brioche-texte{animation:briocheBulle .4s .12s ease-out both;}
-  .brioche-bulle.nouveau .brioche-tete{animation:briocheSaut .6s ease-out;}
+  .brioche-bulle.nouveau .brioche-tete-tenue{animation:briocheSaut .6s ease-out, var(--humeur) .6s;}
   .brioche-bulle.nouveau .brioche-texte{animation:briocheBulle .35s ease-out;}
   @keyframes briocheArrivee{from{transform:translateY(12px);opacity:0;}to{transform:translateY(0);opacity:1;}}
   @keyframes briocheSaut{0%,100%{transform:translateY(0);}30%{transform:translateY(-10px);}55%{transform:translateY(0);}75%{transform:translateY(-3px);}}
   @keyframes briocheBulle{from{opacity:.25;}to{opacity:1;}}
-  @media (prefers-reduced-motion: reduce){ .brioche-tete,.brioche-texte{animation:none !important;} }
+  /* au repos : une respiration à peine visible */
+  @keyframes briocheRespire{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-2.5px);}
+  }
+  /* content : deux bonds qui retombent, puis une longue pause */
+  @keyframes briocheJoie{
+    0%,60%,100%{transform:translateY(0);}
+    8%{transform:translateY(-11px);}
+    18%{transform:translateY(0);}
+    26%{transform:translateY(-7px);}
+    34%{transform:translateY(0);}
+    41%{transform:translateY(-3px);}
+    48%{transform:translateY(0);}
+  }
+  /* il manque quelque chose : elle se dandine pour attirer l'œil */
+  @keyframes briocheAppel{
+    0%,42%,100%{transform:translateX(0);}
+    7%{transform:translateX(-3.5px);}
+    14%{transform:translateX(3.5px);}
+    21%{transform:translateX(-2.5px);}
+    28%{transform:translateX(2.5px);}
+    35%{transform:translateX(-1.2px);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .brioche-tete,.brioche-tete-tenue,.brioche-texte{animation:none !important;}
+  }
 
   /* ---------- feuille de détail : même fond et même verre que l'écran du jour ---------- */
   .stat-sheet{
