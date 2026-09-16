@@ -1521,12 +1521,6 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   @media (prefers-reduced-motion:reduce){
     .weight-edit-btn-beat::before,.weight-edit-btn-beat::after{animation:none;}
   }
-  .weight-input{
-    width:100%;text-align:center;margin-top:8px;border:none;
-    background:rgba(255,255,255,.10);border-radius:16px;padding:8px;
-    font-size:18px;color:var(--ink);outline:none;
-  }
-  .repas-theme .weight-input{background:rgba(255,255,255,.6);color:#1C1730;}
   .progress-square .btn-primary{margin-top:8px;padding:8px;font-size:13px;}
   .weight-sheet .btn-primary{margin-top:24px;font-weight:500;}
 
@@ -1832,15 +1826,6 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     margin-top:28px;margin-bottom:2px;
   }
   .repas-theme .weight-date-label{color:#8A82A0;}
-  .weight-date-nav{display:flex;align-items:center;gap:8px;margin-top:24px;}
-  .weight-date-nav .weight-input{flex:1;}
-  .weight-date-nav-btn{
-    flex-shrink:0;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);
-    background:var(--paper);color:var(--ink);font-size:18px;line-height:1;
-    display:flex;align-items:center;justify-content:center;padding:0;
-  }
-  .weight-date-nav-btn:active{background:#F3EEF7;}
-  .weight-date-nav-btn:disabled{opacity:.35;}
 
   /* ---------- écran Recettes ---------- */
   /* ---------- questionnaire des goûts ---------- */
@@ -2225,6 +2210,17 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
 
   /* ---------- Brioche sur l'écran du jour ---------- */
+  /* Une journée qui n'est plus la journée en cours : on dit pourquoi, plutôt
+     que de laisser les boutons disparaître sans explication. */
+  .jour-fige{
+    display:flex;align-items:flex-start;gap:10px;margin:16px 0 14px;
+    padding:11px 14px;border-radius:var(--radius-md);
+    font-size:12.5px;font-weight:600;line-height:1.45;color:#6B5E86;
+    background:rgba(255,255,255,.45);
+    backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.7);
+  }
+  .jour-fige-ico{font-size:15px;line-height:1.25;flex-shrink:0;}
   .brioche-bulle{display:flex;align-items:center;gap:12px;margin:16px 0 14px;}
   /* pas de filtre ni de rotation sur l'image : c'est ce qui la rendait floue pendant le saut */
   .brioche-tete{width:48px;border-radius:14px;height:auto;flex-shrink:0;display:block;}
@@ -2993,8 +2989,6 @@ html.sombre .celebration-text{color:#fff}
 html.sombre .pulse-ring{border:2px solid rgba(123,79,224,.8)}
 html.sombre .weight-edit-btn{background:#7B4FE0;color:#fff;border:none}
 html.sombre .weight-edit-btn-beat::before, html.sombre .weight-edit-btn-beat::after{border:2px solid rgba(123,79,224,.8)}
-html.sombre .weight-input{border:none;background:rgba(46,37,72,0.21);color:var(--ink);outline:none}
-html.sombre .repas-theme .weight-input{background:rgba(46,37,72,0.76);color:#EDECF4}
 html.sombre .weight-sheet-backdrop{background:transparent}
 html.sombre .weight-sheet{background:rgba(46,37,72,0.705);border:1.5px solid rgba(255,255,255,0.136);border-bottom:none;box-shadow:0 -10px 30px rgba(0,0,0,.2)}
 html.sombre .weight-detail-title{color:#EDECF4}
@@ -3042,8 +3036,6 @@ html.sombre .repas-theme .tick .bar{background:#261B37}
 html.sombre .tick.major .bar{background:#7B4FE0}
 html.sombre .weight-date-label{color:var(--muted)}
 html.sombre .repas-theme .weight-date-label{color:#AAA5B7}
-html.sombre .weight-date-nav-btn{border:1px solid var(--line);background:var(--paper);color:var(--ink)}
-html.sombre .weight-date-nav-btn:active{background:#1D1226}
 html.sombre .food-row{border:1px solid #47335B;background:rgba(46,37,72,0.65)}
 html.sombre .food-name{color:#EDECF4}
 html.sombre .food-choice{border:1.5px solid #47335B;background:rgba(46,37,72,0.815)}
@@ -3150,6 +3142,7 @@ html.sombre .mee-champ input{border:1.5px solid #47335B;background:#2E2548;color
 html.sombre .mee-champ input:focus{border-color:#7B4FE0}
 html.sombre .mee-apercu{color:#A98DF0}
 html.sombre .mee-ok{border:none;background:#7B4FE0;color:#fff}
+html.sombre .jour-fige{color:#AAA5B7;background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112)}
 html.sombre .brioche-texte{color:#EDECF4;background:rgba(46,37,72,0.595);border:1px solid rgba(255,255,255,0.112)}
 html.sombre .brioche-texte::before{background:rgba(46,37,72,0.595)}
 html.sombre .brioche-bulle.humeur-alerte .brioche-texte{background:rgba(253,149,61,0.14);color:#FD953D}
@@ -3633,7 +3626,6 @@ const ICONS = {
   corbeille: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 19a1.6 1.6 0 0 0 1.6 1.5h6a1.6 1.6 0 0 0 1.6-1.5l.9-12.5"/><path d="M10.5 10.5v6M13.5 10.5v6"/></svg>`,
   chevron: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>`,
   lune: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.2A8.4 8.4 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2Z"/></svg>`,
-  diamant: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l3 6-9 12L3 9z"/><path d="M3 9h18M9 3 6 9l6 12 6-12-3-6"/></svg>`,
   cle: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M18 12v3.2M15.2 12v2.4"/></svg>`,
   enveloppe: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.4"/><path d="m3.8 7.2 7.1 5.2a2 2 0 0 0 2.2 0l7.1-5.2"/></svg>`,
   sortie: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h3.5A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5H14"/><path d="M10 8.5 6.5 12 10 15.5M6.8 12H15"/></svg>`,
@@ -3785,7 +3777,6 @@ let state = {
   weightHistory: {},     // { "YYYY-MM-DD": poids le plus bas du jour }
   streak: { dernier: null, jours: 0, record: 0 },  // série de jours consécutifs
   recompenses: null,    // { depense, tenues, tenue, jokers, jokersPoses }
-  options: { points:false },   // fonctionnalités que l'on peut allumer soi-même
   pts: null,            // recalculé à chaque rendu, jamais enregistré
   sombre: false,         // mode sombre : proposé dans les réglages, clair par défaut
   favoris: [],           // aliments favoris (valeurs pour 100 g/ml)
@@ -4222,11 +4213,6 @@ async function boot(){
   );
 
   try {
-    const r = await window.storage.get('options', true);
-    state.options = Object.assign({ points:false }, r ? JSON.parse(r.value) : {});
-  } catch(e){ state.options = { points:false }; }
-
-  try {
     const r = await window.storage.get('taste-progress', true);
     state.tasteProgress = r ? JSON.parse(r.value) : null;
   } catch(e){ state.tasteProgress = null; }
@@ -4388,10 +4374,7 @@ function render(){
   if (state.screen === 'gouts') return renderGouts();
   if (state.screen === 'recettes') return renderRecettes();
   if (state.screen === 'reglages') return renderReglages();
-  if (state.screen === 'recompenses'){
-    if (!state.options.points){ state.screen = 'category'; return renderRepasDashboard(); }
-    return renderRecompenses();
-  }
+  if (state.screen === 'recompenses') return renderRecompenses();
 }
 
 /* ---------------- onboarding : parcours nouvel utilisateur ---------------- */
@@ -5002,6 +4985,20 @@ function oublierProgression(cle){
    reconstruit donc tout seul, et personne ne peut s'en fabriquer un.
    Seul le dépensé est gardé, parce que c'est la seule chose qui ne se déduit
    de rien. */
+/* Seule la journée en cours se remplit. Compléter la veille après coup, ou
+   prendre de l'avance sur demain, permettrait de fabriquer des points et des
+   séries à volonté. Les jours passés restent consultables, simplement figés.
+   La règle est vérifiée ici, au moment d'écrire, et pas seulement dans les
+   boutons : c'est le seul endroit par où tous les chemins passent. */
+const jourModifiable = (k) => (k || todayKey()) === todayKey();
+function refuserSiFige(k){
+  if (jourModifiable(k)) return false;
+  showToast((k || '') > todayKey()
+    ? 'Ce jour n\u2019est pas encore arrivé'
+    : 'Une journée passée ne se modifie plus');
+  return true;
+}
+
 const BAREME = { repas:10, journee:20, cal:25, prot:15, eau:15, pesee:10, serie:5, serieMax:50 };
 const PRIX_JOKER = 300;
 
@@ -5129,7 +5126,6 @@ function majEtatPoints(){
 let ptsAffiches = null;
 function signalerGain(){
   const p = majEtatPoints();
-  if (!state.options.points) return;
 
   // la flamme suit tout de suite, même quand rien n'est redessiné
   const nb = document.querySelector('#serieBadge .serie-nombre');
@@ -5211,9 +5207,7 @@ function serieFxHtml(fx, manuel){
         <div class="serie-fx-halo"></div>
         <div class="serie-fx-flamme allumee">🔥</div>
         <div class="serie-fx-nombre">${premier ? 'Premier jour' : `${fx.jours} jours d'affilée`}</div>
-        ${state.options && state.options.points ? `
-          <div class="serie-fx-points">+${Math.min(Math.max(fx.jours, 1) * BAREME.serie, BAREME.serieMax)} 🍞 par jour</div>
-        ` : ''}
+        <div class="serie-fx-points">+${Math.min(Math.max(fx.jours, 1) * BAREME.serie, BAREME.serieMax)} 🍞 par jour</div>
         <div class="serie-fx-texte">${premier
           ? 'La flamme est allumée. Reviens demain pour l\u2019entretenir.'
           : (fx.jours === fx.record
@@ -6809,6 +6803,7 @@ function renderRepasDashboard(){
 
   // Une fois l'invitation du jour fermée (« Plus tard », choix d'un repas…),
   // les repas dont l'heure est passée et qui sont encore vides sont surlignés.
+  const fige = !jourModifiable(state.viewDate);
   const surlignerRepas = state.viewDate === todayKey() && state.promptDay === todayKey();
   const pulserRepas = !repasPulseJouee;
   let repasSurligne = false;
@@ -6828,16 +6823,16 @@ function renderRepasDashboard(){
       const unite = e.fields.unite || 'g';
       const enEdition = qte && state.repasEditEntry === e.id;
       return `
-      <div class="meal-entry ${qte ? 'modifiable' : ''} ${enEdition ? 'en-edition' : ''}" data-id="${e.id}">
+      <div class="meal-entry ${(qte && !fige) ? 'modifiable' : ''} ${enEdition ? 'en-edition' : ''}" data-id="${e.id}">
         <div class="meal-entry-main">
           <div class="meal-entry-name">${e.fields.description || 'Sans description'}</div>
           <div class="meal-entry-info">
-            ${qte ? `<span class="meal-entry-qty">${fmtMacro(qte)} ${unite}<span class="meal-entry-crayon" aria-hidden="true">✎</span></span>` : ''}
+            ${qte ? `<span class="meal-entry-qty">${fmtMacro(qte)} ${unite}${fige ? '' : '<span class="meal-entry-crayon" aria-hidden="true">✎</span>'}</span>` : ''}
             ${cal !== null ? `<span class="meal-entry-cal">${cal} kcal</span>` : ''}
             <span class="meal-entry-macros">P ${prot}g · G ${carb}g · L ${fat}g</span>
           </div>
         </div>
-        <button class="meal-entry-delete" data-id="${e.id}" title="Supprimer">×</button>
+        ${fige ? '' : `<button class="meal-entry-delete" data-id="${e.id}" title="Supprimer">×</button>`}
       </div>
       ${enEdition ? `
       <div class="meal-entry-edit">
@@ -6909,7 +6904,7 @@ function renderRepasDashboard(){
               </div>` : ''}
             </div>
           </div>
-          <button class="meal-add" data-meal="${mt}">${isAdding ? '−' : '+'}</button>
+          ${fige ? '' : `<button class="meal-add" data-meal="${mt}">${isAdding ? '−' : '+'}</button>`}
         </div>
         ${entriesHtml}
         ${formHtml}
@@ -6925,11 +6920,10 @@ function renderRepasDashboard(){
         <p class="message-jour">${messageDuJour()}</p>
       </div>
       <div class="top-pastilles">
-        ${state.options.points ? `
-          <button class="serie-pastille pastille-brioche" id="recompensesBadge"
-            title="Tes récompenses" aria-label="Tes récompenses">
-            <span class="serie-flamme">🍞</span>
-          </button>` : ''}
+        <button class="serie-pastille pastille-brioche" id="recompensesBadge"
+          title="Tes récompenses" aria-label="Tes récompenses">
+          <span class="serie-flamme">🍞</span>
+        </button>
         ${state.streak && state.streak.jours ? `
           <button class="serie-pastille" id="serieBadge" title="${state.streak.jours} jour${state.streak.jours > 1 ? 's' : ''} d'affilée${state.streak.record > state.streak.jours ? ` — record : ${state.streak.record}` : ''}">
             <span class="serie-flamme">🔥</span>
@@ -6946,6 +6940,12 @@ function renderRepasDashboard(){
       </div>
     </div>
 
+    ${fige ? `<div class="jour-fige" role="status">
+      <span class="jour-fige-ico" aria-hidden="true">🔒</span>
+      <span>${state.viewDate > todayKey()
+        ? 'Ce jour n\u2019est pas encore arrivé. Tu pourras le remplir le moment venu.'
+        : 'Journée passée : elle se consulte, mais ne se modifie plus.'}</span>
+    </div>` : ''}
     ${state.promptDay === todayKey() ? bulleBriocheHtml(messageBrioche(dayEntries, consumed, goals, mlToday, waterGoal)) : ''}
 
     <div class="${consumeDayFlipClass()}">
@@ -6999,6 +6999,7 @@ function renderRepasDashboard(){
             <div class="hydration-litres">soit ${formatLitres(waterGoal)}</div>
           </div>
         </div>
+        ${fige ? '' : `
         <div class="water-actions">
           <button class="water-btn water-add-btn" data-ml="150">+150 ml</button>
           <button class="water-btn water-add-btn" data-ml="250">+250 ml</button>
@@ -7006,6 +7007,7 @@ function renderRepasDashboard(){
           <button class="water-btn water-btn-icon" id="waterCustomBtn" aria-label="Autre quantité">✎</button>
           <button class="water-btn water-btn-icon" id="waterUndoBtn" aria-label="Annuler le dernier ajout" ${waterLogToday.length ? '' : 'disabled'}>↩</button>
         </div>
+        `}
         ${state.waterCustomOpen ? `
           <div class="water-custom-row">
             <input type="number" id="waterCustomInput" placeholder="Quantité en ml" inputmode="numeric" min="1">
@@ -7436,6 +7438,7 @@ async function addRepasEntry(mealType){
 
   if (!desc && !cal){ showToast('Ajoute au moins une info'); return; }
 
+  if (refuserSiFige(state.viewDate)) return;
   const entry = {
     id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     date: state.viewDate,
@@ -7468,6 +7471,8 @@ async function addRepasEntry(mealType){
 // Nouvelle quantité pour un aliment déjà noté : tout est recalculé à partir
 // des valeurs d'origine (pas d'arrondis qui s'accumulent d'une modif à l'autre).
 async function modifierQuantiteRepas(id, nouvelle){
+  const vise = (state.entries.repas || []).find(e => e.id === id);
+  if (vise && refuserSiFige(vise.date)) return;
   const e = (state.entries.repas || []).find(x => x.id === id);
   if (!e) return;
   const q = parseFloat(nouvelle);
@@ -7527,6 +7532,8 @@ function demanderSuppressionRepas(id){
 }
 
 async function deleteRepasEntry(id){
+  const vise = (state.entries.repas || []).find(e => e.id === id);
+  if (vise && refuserSiFige(vise.date)) return;
   const previousOffsets = captureRingOffsets();
   const previousNumbers = captureCardNumbers();
   state.entries.repas = (state.entries.repas || []).filter(e => e.id !== id);
@@ -7690,6 +7697,7 @@ async function persistWater(){
 
 async function addWater(ml){
   if (!ml || !isFinite(ml) || ml <= 0) return;
+  if (refuserSiFige(state.viewDate)) return;
   const day = state.viewDate;
   const goal = hydrationGoalMl();
   const before = state.water[day] || 0;
@@ -7706,6 +7714,7 @@ async function addWater(ml){
 }
 
 async function undoWater(){
+  if (refuserSiFige(state.viewDate)) return;
   const day = state.viewDate;
   const log = state.waterLog[day] || [];
   if (!log.length) return;
@@ -8046,14 +8055,7 @@ function renderProgres(){
   }).join('');
 
   const weightPanelInner = `
-    <div class="progress-square-label" id="weightPanelDateLabel">${(() => {
-      const d = state.weightEntryDate || todayKey();
-      if (d === todayKey()) return 'Mon poids aujourd\u2019hui';
-      const dt = new Date(d + 'T00:00:00');
-      const dd = String(dt.getDate()).padStart(2,'0');
-      const mm = String(dt.getMonth()+1).padStart(2,'0');
-      return `Mon poids du ${dd}/${mm}`;
-    })()}</div>
+    <div class="progress-square-label" id="weightPanelDateLabel">Mon poids aujourd\u2019hui</div>
     ${state.typingWeight ? `
       <input type="number" id="weightExactInput" class="weight-exact-input" value="${rulerCurrentValue}" step="0.1">
     ` : `
@@ -8064,11 +8066,6 @@ function renderProgres(){
       <div class="ruler-scroll" id="rulerScroll">
         <div class="ruler-track" id="rulerTrack">${buildRulerTicks()}</div>
       </div>
-    </div>
-    <div class="weight-date-nav">
-      <button type="button" class="weight-date-nav-btn" id="weightDatePrev" aria-label="Jour précédent">‹</button>
-      <input type="date" id="weightDate" class="weight-input" aria-label="Date de pesée" value="${state.weightEntryDate || todayKey()}" max="${todayKey()}">
-      <button type="button" class="weight-date-nav-btn" id="weightDateNext" aria-label="Jour suivant" ${((state.weightEntryDate || todayKey()) >= todayKey()) ? 'disabled' : ''}>›</button>
     </div>
     <button class="btn-primary" id="weightSave">Enregistrer mon poids</button>
   `;
@@ -8191,7 +8188,7 @@ function renderProgres(){
   document.getElementById('weightEditBtn').onclick = (e) => {
     e.stopPropagation();
     skipImcAnim = true;
-    state.weightEntryDate = viewDay;
+    state.weightEntryDate = todayKey();
     rulerCurrentValue = weightForDate(state.weightEntryDate);
     state.editingWeight = true;
     renderProgres();
@@ -8376,50 +8373,6 @@ function renderProgres(){
       };
     }
 
-    const dateInput = document.getElementById('weightDate');
-    const prevBtn = document.getElementById('weightDatePrev');
-    const nextBtn = document.getElementById('weightDateNext');
-
-    const addDays = (dateStr, n) => {
-      const dt = new Date(dateStr + 'T00:00:00');
-      dt.setDate(dt.getDate() + n);
-      const yyyy = dt.getFullYear();
-      const mm = String(dt.getMonth() + 1).padStart(2, '0');
-      const dd = String(dt.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
-    const goToDate = (raw) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return;
-      if (raw > todayKey()) return; // pas de saisie dans le futur
-      state.weightEntryDate = raw;
-      dateInput.value = raw;
-      if (nextBtn) nextBtn.disabled = (raw >= todayKey());
-      const v = weightForDate(raw);
-      rulerCurrentValue = Math.min(RULER_MAX, Math.max(RULER_MIN, Math.round(v * 10) / 10));
-      scrollEl.scrollLeft = ((rulerCurrentValue - RULER_MIN) / RULER_STEP) * RULER_TICK_PX + RULER_TICK_PX / 2;
-      const display = document.getElementById('weightPickerValue');
-      if (display) display.textContent = `${rulerCurrentValue}kg`;
-      const dateLabel = document.getElementById('weightPanelDateLabel');
-      if (dateLabel){
-        if (raw === todayKey()) dateLabel.textContent = 'Mon poids aujourd\u2019hui';
-        else {
-          const dt2 = new Date(raw + 'T00:00:00');
-          const dd2 = String(dt2.getDate()).padStart(2,'0');
-          const mm2 = String(dt2.getMonth()+1).padStart(2,'0');
-          dateLabel.textContent = `Mon poids du ${dd2}/${mm2}`;
-        }
-      }
-      curveRuler();
-    };
-    dateInput.addEventListener('change', () => goToDate(dateInput.value));
-    dateInput.addEventListener('input', () => goToDate(dateInput.value));
-    if (prevBtn) prevBtn.onclick = (e) => { e.stopPropagation(); goToDate(addDays(state.weightEntryDate || todayKey(), -1)); };
-    if (nextBtn){
-      nextBtn.disabled = ((state.weightEntryDate || todayKey()) >= todayKey());
-      nextBtn.onclick = (e) => { e.stopPropagation(); goToDate(addDays(state.weightEntryDate || todayKey(), 1)); };
-    }
-
     document.getElementById('weightSave').onclick = (e) => { e.stopPropagation(); saveWeight(); };
   }
 }
@@ -8481,6 +8434,7 @@ function triggerObjectiveCelebration(){
 
 async function saveWeight(){
   const dateVal = state.weightEntryDate || todayKey();
+  if (refuserSiFige(dateVal)) return;
   const previousNumbers = captureProgresNumbers();
 
   const oldPoids = state.body.poids;
@@ -9017,6 +8971,7 @@ function buildMenu(catId, caloriesCible, goals){
 }
 
 function addMenuToJournal(cat, menu){
+  if (refuserSiFige(state.viewDate)) return;
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     date: state.viewDate || todayKey(),
@@ -9453,7 +9408,7 @@ function demanderAchat(titre, texte, motBouton, faire){
    repas. Une seule fonction habille n'importe quelle image d'elle. */
 function habiller(imgHtml, classe){
   const tenue = tenueDef((state.recompenses || {}).tenue);
-  const porte = state.options && state.options.points && tenue.emoji;
+  const porte = !!tenue.emoji;
   return `<span class="brioche-tenue${classe ? ' ' + classe : ''}">${imgHtml}${
     porte ? `<span class="brioche-accessoire tenue-${tenue.id}" aria-hidden="true">${tenue.emoji}</span>` : ''
   }</span>`;
@@ -9729,17 +9684,6 @@ function renderReglages(){
     </div>
 
     <div class="rg-section">
-      <div class="rg-section-titre">Fonctionnalités</div>
-      <div class="recap-card rg-carte">
-        <label class="rg-ligne" for="rg_points">
-          <span class="rg-ico">${ICONS.diamant}</span>
-          <span class="rg-txt"><b>Points et récompenses</b><span>Des points par journée notée, des niveaux et des tenues pour Brioche</span></span>
-          <input type="checkbox" role="switch" class="rg-switch" id="rg_points" ${state.options.points ? 'checked' : ''}>
-        </label>
-      </div>
-    </div>
-
-    <div class="rg-section">
       <div class="rg-section-titre">Compte</div>
       <div class="recap-card rg-carte">
         ${bouton('rg_pseudo', ICONS.pleinPseudo, 'Pseudo', 'Le nom qui t’accueille sur l’app', esc(state.userName || 'À choisir'))}
@@ -9797,14 +9741,6 @@ function renderReglages(){
   };
 
   /* ----- apparence ----- */
-  const pointsInput = document.getElementById('rg_points');
-  if (pointsInput) pointsInput.onchange = async () => {
-    state.options.points = pointsInput.checked;
-    try { await window.storage.set('options', JSON.stringify(state.options), true); }
-    catch(e){ showToast('Erreur de sauvegarde'); }
-    showToast(state.options.points ? 'Points activés 💎' : 'Points désactivés');
-  };
-
   const sombreInput = document.getElementById('rg_sombre');
   if (sombreInput) sombreInput.onchange = async () => {
     state.sombre = sombreInput.checked;
@@ -9917,6 +9853,8 @@ function repasSelonHeure(){
 
 function ouvrirPhotoRepas(){
   if (document.getElementById('photoFond')) return;
+  // le jour visé est celui affiché quand on est sur le journal
+  if (state.screen === 'category' && refuserSiFige(state.viewDate)) return;
   photoRepas = {
     etape: 'choix',        // choix | analyse | resultat | erreur
     image: null,           // photo réduite (aperçu)
@@ -10248,6 +10186,7 @@ async function ajouterPhotoAuJournal(){
   if (!gardes.length) return;
 
   const jour = (state.screen === 'category' && state.viewDate) ? state.viewDate : todayKey();
+  if (refuserSiFige(jour)) return;
   const t = Date.now();
   const nouvelles = gardes.map((a, i) => ({
     id: t.toString(36) + i + Math.random().toString(36).slice(2, 6),
@@ -10809,6 +10748,7 @@ function afficherFiche(produit){
 // Ajout direct d'un aliment au journal du jour affiché, avec l'animation
 // habituelle des anneaux et des chiffres.
 async function ajouterAliment(f, quantite, repas){
+  if (refuserSiFige(state.viewDate)) return;
   const r = quantite / 100;
   const arr = x => String(Math.round((parseFloat(x) || 0) * r * 10) / 10);
   const entry = {
