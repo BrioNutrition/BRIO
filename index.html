@@ -1205,27 +1205,15 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
   /* objectif atteint : l'eau reste bleue, sans animation en plus */
 
-  /* Les cinq boutons tiennent sur une seule ligne : les trois quantités se
-     partagent la place restante, les deux icônes gardent leur largeur. Sans
-     cela, la dernière passait seule à la ligne sur un écran étroit. */
-  .water-actions{
-    display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto auto;
-    gap:7px;margin-top:16px;align-items:stretch;
-  }
+  .water-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
   .water-btn{
     border:1.5px solid #2F7FD4;background:rgba(255,255,255,.6);color:#2F7FD4;
-    border-radius:999px;padding:9px 6px;font-size:13px;font-weight:700;
+    border-radius:999px;padding:9px 13px;font-size:13px;font-weight:700;
     font-family:inherit;line-height:1;cursor:pointer;
-    min-width:0;white-space:nowrap;text-align:center;
   }
   .water-btn:active{background:#2F7FD4;color:#fff;}
   .water-btn:disabled{opacity:.3;}
-  .water-btn-icon{width:38px;padding:9px 0;font-size:14px;}
-  @media (max-width:360px){
-    .water-actions{gap:5px;}
-    .water-btn{font-size:11.5px;padding:9px 2px;}
-    .water-btn-icon{width:30px;}
-  }
+  .water-btn-icon{padding:9px 12px;font-size:14px;}
   .water-custom-row{display:flex;gap:8px;margin-top:10px;}
   .water-custom-row input{
     flex:1;min-width:0;border:1px solid #B9D5F2;border-radius:12px;padding:10px 12px;
@@ -1411,19 +1399,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .nav-item.active .nav-label{font-weight:800;color:#7B4FE0;}
 
   /* ---------- écran Progrès ---------- */
-  .progress-squares{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px;align-items:stretch;}
-  /* IMC et poids sont deux fonctionnalités distinctes : chacune annonce son
-     titre au-dessus de sa carte. Le titre tient toujours sur une seule ligne,
-     les deux cartes commencent donc exactement à la même hauteur. */
-  .progress-col{display:flex;flex-direction:column;min-width:0;}
-  .progress-col-titre{
-    display:flex;align-items:center;gap:6px;
-    font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-    color:#8A82A0;line-height:16px;height:16px;margin:0 0 9px 6px;
-    white-space:nowrap;overflow:hidden;
-  }
-  .progress-col-titre svg{width:15px;height:15px;color:#7B4FE0;flex-shrink:0;}
-  .progress-col .progress-square{flex:1;}
+  .progress-squares{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px;}
   .progress-square{
     background:var(--paper);border-radius:var(--radius-lg);padding:22px 16px;
     text-align:center;cursor:pointer;
@@ -1442,7 +1418,8 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .progress-square-label-icon svg{width:15px;height:15px;color:#7B4FE0;flex-shrink:0;}
   .progress-square-value{font-weight:600;font-size:28px;margin-top:8px;}
   .repas-theme .progress-square-value{color:#1C1730;}
-  .progress-col .progress-square-value{margin-top:0;}
+  .weight-square .progress-square-value{margin-top:3px;}
+  .imc-square .progress-square-value{margin-top:3px;}
   .imc-gauge{position:relative;height:6px;border-radius:999px;margin-top:14px;}
   .imc-gauge-bar{
     position:absolute;inset:0;border-radius:999px;
@@ -1982,13 +1959,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
 
   /* ---------- catégories de menus ---------- */
-  /* Les catégories et la journée type sont deux fonctionnalités différentes :
-     ce titre annonce la première, comme « Ta journée type » annonce la seconde. */
-  .menu-titre{
-    font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
-    color:#8A82A0;margin:26px 0 11px 6px;
-  }
-  .menu-cats{display:flex;flex-direction:column;gap:12px;}
+  .menu-cats{display:flex;flex-direction:column;gap:12px;margin-top:22px;}
   .menu-cat{
     display:flex;align-items:center;gap:14px;text-align:left;width:100%;
     background:rgba(255,255,255,.45);
@@ -3084,9 +3055,6 @@ html.sombre #err_general{background:rgba(76,39,36,0.69);border:1px solid rgba(22
 html.sombre .compte-info{color:#8FD3A6;background:rgba(32,64,45,.7);border-color:rgba(67,160,71,.35)}
 html.sombre .compte-lien{color:#A98DF0}
 html.sombre .compte-note{color:#AAA5B7}
-html.sombre .progress-col-titre{color:#9C95AE}
-html.sombre .progress-col-titre svg{color:#A98DF0}
-html.sombre .menu-titre{color:#9C95AE}
 html.sombre .install-texte{color:#EDECF4}
 html.sombre .install-etapes{color:#D6D4DE}
 html.sombre .install-ico{color:#80B1E5}
@@ -7750,9 +7718,8 @@ function renderProgres(){
     <div class="repas-top"><h1>📊 Progrès</h1></div>
 
     <div class="progress-squares">
-      <div class="progress-col">
-      <div class="progress-col-titre">${IMC_ICON}<span>Ton IMC</span></div>
       <div class="progress-square imc-square">
+        <div class="progress-square-label progress-square-label-icon">${IMC_ICON}<span>IMC</span></div>
         <div class="progress-square-value">${imc ? `<span id="imcNumberValue">${imc.toFixed(1)}</span>` : '—'}</div>
         <div class="progress-square-sub" style="${imc ? `color:${imcColor(imc)};font-weight:700;` : ''}">${imc ? imcCategory(imc) : 'Renseigne ton poids'}</div>
         ${imc ? `
@@ -7762,10 +7729,8 @@ function renderProgres(){
           </div>
         ` : ''}
       </div>
-      </div>
-      <div class="progress-col">
-      <div class="progress-col-titre">${WEIGHT_ICON}<span>Ton poids</span></div>
       <div class="progress-square weight-square" id="weightSquare">
+        <div class="progress-square-label progress-square-label-icon">${WEIGHT_ICON}<span>Poids</span></div>
         <div class="progress-square-value">${poids ? `<span id="weightNumberValue">${poids.toFixed(1)}</span><span class="weight-kg-suffix">kg</span>` : '—'}</div>
         ${(poids && !weightInfo.exact) ? `<div class="progress-square-sub weight-src-note">Pesée du ${shortDateFR(weightInfo.date)}</div>` : ''}
         ${(poids && poidsObjectif) ? (
@@ -7774,7 +7739,6 @@ function renderProgres(){
             : `<div class="progress-square-sub weight-objective ${(poids - poidsObjectif) > 0 ? 'weight-objective-over' : ''}">${poidsEcart(poids - poidsObjectif)} vs obj.</div>`
         ) : ''}
         <button class="weight-edit-btn${state.weightHistory[viewDay] == null ? ' weight-edit-btn-beat' : ''}" id="weightEditBtn">+</button>
-      </div>
       </div>
     </div>
 
@@ -8865,7 +8829,6 @@ function renderRecettes(){
     <div class="screen-content ${consumeFadeClass()}">
     <div class="repas-top"><h1>🍎 Recettes</h1></div>
     ${header}
-    <div class="menu-titre">Idées de menus</div>
     <div class="menu-zone">
     <div class="menu-cats${(t && !state.tasteJustDone) ? '' : ' verrouille'}">
       ${MENU_CATS.map(c=>`
