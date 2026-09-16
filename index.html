@@ -1076,7 +1076,9 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .serie-pastille:active{transform:scale(.94);}
   /* Deux pastilles côte à côte : le diamant d'abord, la flamme ensuite. */
   .top-pastilles{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .pastille-diamant{padding:7px 10px;}
+  .pastille-brioche{padding:4px 7px;}
+  .pastille-brioche .brioche-tenue{width:26px;}
+  .pastille-brioche .brioche-tenue img{width:26px;height:26px;border-radius:9px;}
   .serie-flamme{font-size:16px;line-height:1;}
   .serie-nombre{font-size:16px;font-weight:800;color:#D9622A;line-height:1;}
   .repas-theme .repas-top h1{color:#1C1730;font-size:22px;font-weight:600;}
@@ -2221,7 +2223,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   /* pas de filtre ni de rotation sur l'image : c'est ce qui la rendait floue pendant le saut */
   .brioche-tete{width:48px;border-radius:14px;height:auto;flex-shrink:0;display:block;}
   /* la tenue suit Brioche jusque dans sa bulle : 48px, comme sa tête */
-  .brioche-tenue.brioche-tete-tenue{flex-shrink:0;font-size:48px;}
+  .brioche-tenue.brioche-tete-tenue{flex-shrink:0;width:48px;}
   /* même verre liquide que les cases calories / macros */
   .brioche-texte{
     position:relative;flex:1;padding:12px 15px;border-radius:var(--radius-md);
@@ -2297,6 +2299,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .confirm-btn{border:none;border-radius:999px;padding:11px 0;font-size:14px;font-weight:700;}
   .confirm-annuler{background:rgba(123,79,224,.12);color:#6B3FC4;}
   .confirm-supprimer{background:#D9534F;color:#fff;}
+  .confirm-acheter{background:#7B4FE0;color:#fff;}
   @media (prefers-reduced-motion: reduce){ .confirm-fond,.confirm-boite{animation:none;} }
 
   /* ---------- feuilles du bas : glisser vers le bas pour fermer ---------- */
@@ -2379,24 +2382,40 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
      la redessiner, mais on peut lui mettre quelque chose dessus. La taille du
      conteneur sert de base de police, sinon les « em » se calculeraient sur la
      police héritée et l'accessoire serait minuscule. */
-  .brioche-tenue{position:relative;display:inline-block;line-height:0;font-size:0;}
+  /* Le conteneur sert d'unité de mesure : « cqw » vaut 1 % de sa largeur,
+     donc de celle de la mascotte. L'accessoire garde ainsi les mêmes
+     proportions qu'elle fasse 104 px sur l'écran des récompenses ou 26 px
+     dans la pastille — une seule règle pour tous les endroits. Le « top »
+     reste en pourcentage, qui se rapporte lui aussi au conteneur. */
+  .brioche-tenue{
+    position:relative;display:inline-block;line-height:0;
+    container-type:inline-size;
+  }
   .brioche-tenue img{display:block;}
-  .brioche-tenue.grande{width:104px;font-size:104px;}
+  .brioche-tenue.grande{width:104px;}
   .brioche-tenue.grande img{width:104px;height:104px;border-radius:26px;}
-  /* « top » est en pourcentage, pas en em : un « em » se calculerait sur la
-     police de l'accessoire lui-même, et non sur la taille de la mascotte.
-     Le pourcentage, lui, se rapporte bien à elle — la tenue se pose donc au
-     même endroit sur la grande mascotte comme sur la tête de la bulle. */
   .brioche-accessoire{
     position:absolute;line-height:1;pointer-events:none;
-    left:50%;top:-5.5%;font-size:.46em;transform:translateX(-50%);
+    left:50%;top:-5.5%;font-size:46cqw;transform:translateX(-50%);
     filter:drop-shadow(0 2px 4px rgba(28,23,48,.28));
   }
-  .brioche-accessoire.tenue-noeud{top:1%;left:74%;font-size:.3em;transform:rotate(14deg);}
-  .brioche-accessoire.tenue-lunettes{top:40%;font-size:.42em;}
-  .brioche-accessoire.tenue-casquette{top:-7%;font-size:.5em;}
-  .brioche-accessoire.tenue-couronne{top:-6.5%;font-size:.42em;}
-  .rec-niveau{font-family:var(--police-titre);font-size:23px;line-height:1.15;color:#1C1730;margin-top:12px;}
+  .brioche-accessoire.tenue-noeud{top:1%;left:74%;font-size:30cqw;transform:rotate(14deg);}
+  .brioche-accessoire.tenue-lunettes{top:40%;font-size:42cqw;}
+  .brioche-accessoire.tenue-casquette{top:-7%;font-size:50cqw;}
+  .brioche-accessoire.tenue-couronne{top:-6.5%;font-size:42cqw;}
+  /* Chaque endroit garde la mise en page que l'image avait toute seule, et
+     donne au conteneur la largeur de la mascotte : sans largeur explicite,
+     un conteneur de requête se réduit à zéro et « cqw » ne vaut plus rien. */
+  .stat-brioche .brioche-tenue{flex-shrink:0;width:40px;}
+  .compte-brio-tenue{display:block;width:64px;margin:0 auto 18px;}
+  .compte-brio-tenue .compte-brio{margin:0;}
+  .photo-mascotte .brioche-tenue{display:block;width:68px;margin:0 auto 12px;}
+  .photo-mascotte .brioche-tenue img{margin:0;}
+  .photo-apercu .photo-brioche-tenue{position:absolute;right:-14px;bottom:-18px;width:74px;}
+  .photo-apercu .photo-brioche-tenue .photo-brioche{position:static;right:auto;bottom:auto;}
+  .photo-remarque .brioche-tenue{flex-shrink:0;width:30px;margin-top:-2px;}
+  .photo-remarque .brioche-tenue img{margin-top:0;}
+  .rec-niveau{font-family:var(--police-titre);font-weight:700;font-size:23px;line-height:1.15;color:#1C1730;margin-top:12px;}
   .rec-barre{
     height:9px;border-radius:999px;background:rgba(123,79,224,.16);
     margin:13px auto 8px;overflow:hidden;max-width:260px;
@@ -3148,6 +3167,7 @@ html.sombre .confirm-texte strong{color:#EDECF4}
 html.sombre .confirm-btn{border:none}
 html.sombre .confirm-annuler{background:rgba(123,79,224,0.192);color:#A58ADB}
 html.sombre .confirm-supprimer{background:#D9534F;color:#fff}
+html.sombre .confirm-acheter{background:#7B4FE0;color:#fff}
 html.sombre #weightHistorySheet .cat-header h1{color:#EDECF4}
 @media (max-width:480px){
 }
@@ -5325,7 +5345,7 @@ function renderCompte(){
 
   app.innerHTML = `
     <div class="compte-ecran ${consumeFadeClass()}">
-      <img class="compte-brio" src="${BRIOCHE_SRC}" alt="">
+      ${habiller(`<img class="compte-brio" src="${BRIOCHE_SRC}" alt="">`, 'compte-brio-tenue')}
       <h1 class="compte-titre">${titre}</h1>
       <p class="compte-sous">${sousTitre}</p>
 
@@ -6454,7 +6474,7 @@ function statCorpsHtml(){
       <div class="stat-tuile stat-verre"><div class="stat-tuile-val">${reussis} j</div><div class="stat-tuile-lab">Dans l'objectif</div></div>
     </div>
     <div class="stat-brioche stat-verre">
-      <img src="${BRIOCHE_SRC}" alt="Brioche">
+      ${briocheTete()}
       <div>${commentaireStatBrioche(kind, finis.length, reussis, moyenne, obj)}</div>
     </div>
     <div class="stat-note">${c.viserHaut
@@ -6702,13 +6722,7 @@ function bulleBriocheHtml(msg){
   briocheDernierMessage = msg.texte;
   return `
     <div class="brioche-bulle humeur-${msg.humeur} ${nouveau ? 'nouveau' : ''} ${premiere ? 'arrivee' : ''}" role="status">
-      <span class="brioche-tenue brioche-tete-tenue">
-        <img class="brioche-tete" src="${BRIOCHE_SRC}" alt="Brioche">
-        ${(() => {
-          const t = tenueDef((state.recompenses || {}).tenue);
-          return t.emoji ? `<span class="brioche-accessoire tenue-${t.id}" aria-hidden="true">${t.emoji}</span>` : '';
-        })()}
-      </span>
+      ${habiller(`<img class="brioche-tete" src="${BRIOCHE_SRC}" alt="Brioche">`, 'brioche-tete-tenue')}
       <div class="brioche-texte">${msg.texte}</div>
     </div>`;
 }
@@ -6900,9 +6914,9 @@ function renderRepasDashboard(){
       </div>
       <div class="top-pastilles">
         ${state.options.points ? `
-          <button class="serie-pastille pastille-diamant" id="recompensesBadge"
+          <button class="serie-pastille pastille-brioche" id="recompensesBadge"
             title="Tes récompenses" aria-label="Tes récompenses">
-            <span class="serie-flamme">💎</span>
+            ${briocheHabillee()}
           </button>` : ''}
         ${state.streak && state.streak.jours ? `
           <button class="serie-pastille" id="serieBadge" title="${state.streak.jours} jour${state.streak.jours > 1 ? 's' : ''} d'affilée${state.streak.record > state.streak.jours ? ` — record : ${state.streak.record}` : ''}">
@@ -7901,7 +7915,7 @@ function poidsAnalyseHtml(){
       ${entete}
       <div class="stat-vide" style="margin-top:14px;">Aucune pesée sur cette période.</div>
       <div class="stat-brioche stat-verre">
-        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        ${briocheTete()}
         <div>${commentairePoidsBrioche(serie, objectif, 0)}</div>
       </div>
     </div>`;
@@ -7953,7 +7967,7 @@ function poidsAnalyseHtml(){
       <div class="stat-note">${pesees} pesée${pesees > 1 ? 's' : ''} sur la période.${poidsFeuille.echelle !== 'jours' ? ` Chaque point est la moyenne ${poidsFeuille.echelle === 'semaines' ? 'de sa semaine' : 'de son mois'}.` : ''}</div>
 
       <div class="stat-brioche stat-verre">
-        <img src="${BRIOCHE_SRC}" alt="Brioche">
+        ${briocheTete()}
         <div>${commentairePoidsBrioche(serie, objectif, variation)}</div>
       </div>
     </div>`;
@@ -9393,14 +9407,47 @@ function ouvrirPseudo(){
 
 /* ---------------- écran Récompenses ---------------- */
 
-// La mascotte, avec l'accessoire porté posé dessus.
-function briocheHabillee(classe){
-  const tenue = tenueDef((state.recompenses || {}).tenue);
-  return `<span class="brioche-tenue ${classe || ''}">
-    ${photoBrioche('')}
-    ${tenue.emoji ? `<span class="brioche-accessoire tenue-${tenue.id}" aria-hidden="true">${tenue.emoji}</span>` : ''}
-  </span>`;
+// Même fenêtre que pour la suppression d'un aliment, en version non destructive.
+function demanderAchat(titre, texte, motBouton, faire){
+  if (document.getElementById('confirmAchat')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="confirm-fond" id="confirmAchat">
+      <div class="confirm-boite" role="alertdialog" aria-modal="true" aria-labelledby="confirmAchatTitre">
+        <div class="confirm-titre" id="confirmAchatTitre">${titre}</div>
+        <div class="confirm-texte">${texte}</div>
+        <div class="confirm-actions">
+          <button class="confirm-btn confirm-annuler" id="achatNon">Annuler</button>
+          <button class="confirm-btn confirm-acheter" id="achatOui">${motBouton}</button>
+        </div>
+      </div>
+    </div>`);
+  const fond = document.getElementById('confirmAchat');
+  const surEchap = (ev) => { if (ev.key === 'Escape') fermer(); };
+  function fermer(){
+    document.removeEventListener('keydown', surEchap);
+    fond.classList.add('sortie');
+    setTimeout(() => fond.remove(), 180);
+  }
+  document.getElementById('achatNon').onclick = fermer;
+  document.getElementById('achatOui').onclick = () => { fermer(); faire(); };
+  fond.onclick = (ev) => { if (ev.target === fond) fermer(); };
+  document.addEventListener('keydown', surEchap);
+  document.getElementById('achatNon').focus();
 }
+
+
+/* Brioche porte son accessoire partout où elle se montre : la bulle de
+   l'accueil, les feuilles de statistiques, l'écran du compte, la photo d'un
+   repas. Une seule fonction habille n'importe quelle image d'elle. */
+function habiller(imgHtml, classe){
+  const tenue = tenueDef((state.recompenses || {}).tenue);
+  const porte = state.options && state.options.points && tenue.emoji;
+  return `<span class="brioche-tenue${classe ? ' ' + classe : ''}">${imgHtml}${
+    porte ? `<span class="brioche-accessoire tenue-${tenue.id}" aria-hidden="true">${tenue.emoji}</span>` : ''
+  }</span>`;
+}
+const briocheTete = (classe) => habiller(`<img src="${BRIOCHE_SRC}" alt="Brioche">`, classe);
+function briocheHabillee(classe){ return habiller(photoBrioche(''), classe); }
 
 function renderRecompenses(){
   const p = state.pts || majEtatPoints();
@@ -9512,30 +9559,47 @@ function renderRecompenses(){
     render();
   };
 
+  const porter = async (t) => {
+    r.tenue = t.id;
+    await sauverRecompenses();
+    render();
+  };
+  const acheterTenue = async (t) => {
+    if (p.miettes < t.prix) return;
+    r.tenues.push(t.id);
+    r.depense += t.prix;
+    showToast('Tenue débloquée \u2728');
+    await porter(t);
+  };
+
   app.querySelectorAll('.rec-tenue').forEach(btn => {
-    btn.onclick = async () => {
+    btn.onclick = () => {
       const t = tenueDef(btn.dataset.tenue);
-      if (!r.tenues.includes(t.id)){
-        if (p.miettes < t.prix) return;
-        r.tenues.push(t.id);
-        r.depense += t.prix;
-        showToast('Tenue débloquée \u2728');
-      }
-      r.tenue = t.id;
-      await sauverRecompenses();
-      render();
+      // déjà possédée : on la met, sans rien demander
+      if (r.tenues.includes(t.id)) return porter(t);
+      demanderAchat(
+        `Acheter ${t.nom.toLowerCase()}\u00a0?`,
+        `Cela coûte <strong>${t.prix} miettes</strong>. Il t\u2019en restera ${statNb(p.miettes - t.prix)}.`,
+        'Acheter',
+        () => acheterTenue(t)
+      );
     };
   });
 
   const acheter = document.getElementById('recAcheterJoker');
-  if (acheter) acheter.onclick = async () => {
-    if (p.miettes < PRIX_JOKER) return;
-    r.depense += PRIX_JOKER;
-    r.jokers += 1;
-    await sauverRecompenses();
-    showToast('Joker ajouté');
-    render();
-  };
+  if (acheter) acheter.onclick = () => demanderAchat(
+    'Acheter un joker\u00a0?',
+    `Cela coûte <strong>${PRIX_JOKER} miettes</strong>. Il t\u2019en restera ${statNb(p.miettes - PRIX_JOKER)}.`,
+    'Acheter',
+    async () => {
+      if (p.miettes < PRIX_JOKER) return;
+      r.depense += PRIX_JOKER;
+      r.jokers += 1;
+      await sauverRecompenses();
+      showToast('Joker ajouté');
+      render();
+    }
+  );
 
   const poser = document.getElementById('recPoser');
   if (poser) poser.onclick = async () => {
@@ -9914,7 +9978,7 @@ function afficherPhotoRepas(){
   if (p.etape === 'choix' || p.etape === 'erreur'){
     const erreur = p.etape === 'erreur';
     corps.innerHTML = `
-      <div class="photo-mascotte">${photoBrioche()}</div>
+      <div class="photo-mascotte">${briocheHabillee()}</div>
       <div class="photo-titre" id="photoTitre">${erreur
         ? (p.pasDeRepas ? 'Pas d\u2019assiette en vue' : 'L\u2019analyse n\u2019a pas abouti')
         : 'Qu\u2019y a-t-il dans ton assiette&nbsp;?'}</div>
@@ -9949,7 +10013,7 @@ function afficherPhotoRepas(){
       <div class="photo-apercu">
         <img class="photo-apercu-img" src="${p.image}" alt="Ta photo">
         <div class="photo-scan"></div>
-        ${photoBrioche('photo-brioche')}
+        ${briocheHabillee('photo-brioche-tenue')}
       </div>
       <div class="photo-titre" id="photoTitre">Brioche regarde ton assiette</div>
       <div class="photo-sous photo-etape" id="photoEtape" aria-live="polite">${PHOTO_ETAPES[0]}</div>`;
@@ -9978,7 +10042,7 @@ function afficherPhotoRepas(){
       </div>
     </div>
     ${r.description ? `<p class="photo-desc">${photoEsc(r.description)}</p>` : ''}
-    ${r.remarque ? `<div class="photo-remarque">${photoBrioche()}<span>${photoEsc(r.remarque)}</span></div>` : ''}
+    ${r.remarque ? `<div class="photo-remarque">${briocheHabillee()}<span>${photoEsc(r.remarque)}</span></div>` : ''}
 
     <div class="photo-sec">Dans l’assiette</div>
     <div class="photo-liste">
