@@ -65,6 +65,9 @@
 /* Marque une erreur déjà rédigée pour être lue par quelqu'un : elle s'affichera
    telle quelle. Les autres — celles du navigateur ou du serveur, en anglais —
    passent en détail technique sous une phrase claire. Voir messageHumain(). */
+// Échappe ce qui vient de l'utilisateur avant de l'insérer dans du HTML.
+const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+
 function erreurLisible(msg){
   const e = new Error(msg);
   e.lisible = true;
@@ -419,6 +422,11 @@ const nuage = (function(){
   return {
     actif, connecte, demarrer, inscrire, connecter, deconnecter, apresConnexion, vider,
     demanderReinit, lireLienReinit, ouvrirSessionReinit, changerMotDePasse, nettoyerAdresse,
+    // la couche sociale se sert du même accès authentifié : jeton renouvelé et
+    // requête rejouée une fois s'il venait d'expirer
+    api: donnees,
+    cle: () => NUAGE_CLE,
+    uid: () => (session && session.uid) || null,
     email: () => (session && session.email) || null,
     compteLocal: () => lireJSON('brio:compte-dernier', null),
     memoriserCompte: email => ecrireJSON('brio:compte-dernier', { email }),
@@ -1384,7 +1392,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
   .nav-pill-slider{
     position:absolute;top:10px;bottom:10px;left:10px;
-    width:calc((100% - 20px) / 4);
+    width:calc((100% - 20px) / 5);
     background:#DCD5EC;border-radius:999px;
     transition:transform .4s cubic-bezier(.34,1.56,.64,1);
     z-index:0;
@@ -1398,7 +1406,13 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .nav-icon{display:flex;align-items:center;justify-content:center;}
   .nav-icon svg{width:24px;height:24px;color:#B9AEDD;transition:color .25s;}
   .nav-item.active .nav-icon svg{color:#7B4FE0;}
-  .nav-label{font-size:11px;font-weight:700;color:#B9AEDD;transition:color .25s;}
+  .nav-label{font-size:10.5px;font-weight:700;color:#B9AEDD;transition:color .25s;}
+  /* cinq onglets plus le bouton photo : sur un écran étroit, les libellés se
+     chevauchaient. Ils rapetissent au lieu de se marcher dessus. */
+  @media (max-width:370px){
+    .nav-label{font-size:9.5px;}
+    .nav-icon svg{width:22px;height:22px;}
+  }
   .nav-item.active .nav-label{font-weight:800;color:#7B4FE0;}
 
   /* ---------- écran Progrès ---------- */
@@ -2499,6 +2513,132 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     .rec-barre span{transition:none;}
   }
 
+  /* ---------- Stories et amis ---------- */
+  .ami-pastille{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:#7B4FE0;color:#fff;font-weight:800;font-size:15px;
+  }
+  .ami-pastille img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ami-pastille.grande{width:62px;height:62px;font-size:23px;}
+
+  .story-rangee{display:flex;gap:14px;overflow-x:auto;padding:22px 2px 6px;scrollbar-width:none;}
+  .story-rangee::-webkit-scrollbar{display:none;}
+  .story-anneau{
+    background:none;border:none;padding:0;flex-shrink:0;
+    display:flex;flex-direction:column;align-items:center;gap:7px;width:74px;
+    transition:transform .12s ease;
+  }
+  .story-anneau:active{transform:scale(.94);}
+  /* l'anneau coloré dit qu'il y a quelque chose à voir */
+  .story-cercle{
+    width:70px;height:70px;border-radius:50%;padding:3px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(140deg,#A98DF0,#7B4FE0 55%,#FD953D);
+  }
+  .story-anneau.ajout .story-cercle{background:rgba(123,79,224,.18);}
+  .story-plus{
+    width:100%;height:100%;border-radius:50%;background:rgba(255,255,255,.75);
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;font-weight:300;color:#7B4FE0;line-height:1;
+  }
+  .story-nom{
+    font-size:11.5px;font-weight:700;color:#1C1730;max-width:74px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .story-vide-texte{font-size:13px;color:#8A82A0;line-height:1.5;margin:14px 2px 0;}
+
+  .ami-ligne{
+    display:flex;align-items:center;gap:11px;padding:11px 0;
+    border-bottom:1px solid rgba(123,79,224,.1);
+  }
+  .ami-ligne:last-child{border-bottom:none;}
+  .ami-nom{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#1C1730;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ami-actions{display:flex;gap:7px;flex-shrink:0;}
+  .ami-btn{
+    border:none;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;
+    background:#7B4FE0;color:#fff;font-family:inherit;
+  }
+  .ami-btn.discret{background:rgba(123,79,224,.12);color:#6B3FC4;}
+  .ami-btn:active{transform:scale(.95);}
+  .ami-attente{font-size:12px;font-weight:700;color:#8A82A0;}
+
+  /* ---------- la visionneuse ---------- */
+  .story-vue{
+    position:fixed;inset:0;z-index:70;background:#14101F;
+    display:flex;flex-direction:column;align-items:center;
+    animation:fondApparait .2s ease;transition:opacity .2s ease;
+  }
+  .story-vue.sortie{opacity:0;}
+  .story-barres{
+    display:flex;gap:4px;width:100%;padding:calc(12px + env(safe-area-inset-top)) 14px 0;
+  }
+  .story-barre{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);}
+  .story-barre.faite{background:#fff;}
+  .story-fermer{
+    position:absolute;top:calc(28px + env(safe-area-inset-top));right:14px;z-index:3;
+    width:34px;height:34px;padding:0;border:none;border-radius:50%;
+    background:rgba(255,255,255,.16);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .story-fermer svg{width:15px;height:15px;}
+  .story-auteur{display:flex;align-items:center;gap:9px;width:100%;padding:14px 14px 10px;}
+  .story-auteur-nom{font-size:14px;font-weight:800;color:#fff;}
+  .story-auteur-heure{font-size:12px;color:rgba(255,255,255,.62);}
+  .story-image{
+    flex:1;width:100%;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;min-height:0;
+  }
+  .story-image img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  .story-chargement{color:rgba(255,255,255,.6);font-size:13px;font-weight:600;}
+  .story-bas{
+    width:100%;padding:14px 16px calc(20px + env(safe-area-inset-bottom));
+    position:relative;z-index:3;
+  }
+  .story-mot{
+    font-size:15px;font-weight:600;color:#fff;line-height:1.45;
+    text-align:center;text-wrap:balance;margin-bottom:14px;
+  }
+  .story-emojis{display:flex;justify-content:space-between;gap:6px;}
+  .story-emoji{
+    flex:1;background:rgba(255,255,255,.12);border:none;border-radius:999px;
+    padding:9px 0;font-size:21px;line-height:1;transition:transform .12s ease,background .16s ease;
+  }
+  .story-emoji:active{transform:scale(.9);}
+  .story-emoji.choisi{background:rgba(255,255,255,.34);transform:scale(1.08);}
+  .story-recues{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
+  .story-recue{font-size:21px;}
+  .story-recues-vide{font-size:12.5px;color:rgba(255,255,255,.55);}
+  .story-supprimer{
+    display:block;margin:0 auto;border:none;background:rgba(255,255,255,.12);
+    color:#FF9A93;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:700;
+    font-family:inherit;
+  }
+  /* les deux moitiés invisibles qui font avancer, comme partout ailleurs */
+  .story-cote{
+    position:absolute;top:70px;bottom:120px;width:36%;
+    background:none;border:none;padding:0;z-index:2;
+  }
+  .story-cote.gauche{left:0;}
+  .story-cote.droite{right:0;}
+
+  /* ---------- poser sa story ---------- */
+  .story-boite{max-width:340px;}
+  .story-cadre{
+    display:block;width:100%;aspect-ratio:1;margin:14px 0 10px;
+    border-radius:var(--radius-md);overflow:hidden;
+    border:1.5px dashed rgba(123,79,224,.4);background:rgba(123,79,224,.06);
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .story-cadre img{width:100%;height:100%;object-fit:cover;display:block;}
+  .story-cadre-texte{font-size:13px;font-weight:700;color:#7B4FE0;}
+  #storyMot{
+    width:100%;border:1px solid #DCC6F2;border-radius:12px;padding:10px 12px;
+    font-family:inherit;font-size:14px;background:rgba(255,255,255,.75);color:#1C1730;
+  }
+  #storyMot:focus{outline:none;border-color:#7B4FE0;}
+
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
   #app.with-nav{padding-bottom:calc(120px + env(safe-area-inset-bottom));}
@@ -3460,6 +3600,17 @@ html.sombre .rg-stat span{color:#AAA5B7;}
 }
 html.sombre .rg-section-titre{color:#9C95AE;}
 html.sombre .cat-header h1.rec-titre{color:#EDECF4}
+html.sombre .story-nom{color:#EDECF4}
+html.sombre .story-vide-texte{color:#AAA5B7}
+html.sombre .ami-ligne{border-bottom-color:rgba(255,255,255,.08)}
+html.sombre .ami-nom{color:#EDECF4}
+html.sombre .ami-btn.discret{background:rgba(169,141,240,.18);color:#A58ADB}
+html.sombre .ami-attente{color:#AAA5B7}
+html.sombre .story-plus{background:rgba(46,37,72,.85);color:#A98DF0}
+html.sombre .story-anneau.ajout .story-cercle{background:rgba(169,141,240,.22)}
+html.sombre .story-cadre{border-color:rgba(169,141,240,.45);background:rgba(169,141,240,.08)}
+html.sombre .story-cadre-texte{color:#A98DF0}
+html.sombre #storyMot{border-color:rgba(255,255,255,.14);background:rgba(46,37,72,.76);color:#EDECF4}
 html.sombre .rec-niveau{color:#EDECF4}
 html.sombre .rec-vers{color:#AAA5B7}
 html.sombre .rec-barre{background:rgba(169,141,240,.2)}
@@ -3636,12 +3787,14 @@ const ICONS = {
 ICONS.navAccueil = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12l-9 -9l-9 9h2v7a2 2 0 0 0 2 2h4.7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2"/><path d="M19 21.5l2.518 -2.58a1.74 1.74 0 0 0 0 -2.413a1.627 1.627 0 0 0 -2.346 0l-.168 .172l-.168 -.172a1.627 1.627 0 0 0 -2.346 0a1.74 1.74 0 0 0 0 2.412l2.51 2.59z"/></svg>`;
 ICONS.navProgres = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6 -6l4 4l8 -8"/><path d="M14 7l7 0l0 7"/></svg>`;
 ICONS.navPhoto = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2"/><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg>`;
+ICONS.navStories = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="4"/><circle cx="12" cy="12" r="3.4"/><path d="M17 7.5h.01"/></svg>`;
 ICONS.navRecettes = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.918 0 3.52 1.35 3.91 3.151a4 4 0 0 1 2.09 7.723l0 7.126h-12v-7.126a4 4 0 1 1 2.092 -7.723a4 4 0 0 1 3.908 -3.151z"/><path d="M6.161 17.009l11.839 -.009"/></svg>`;
 ICONS.navReglages = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg>`;
 
 const NAV_ITEMS = [
   { id:'category', label:'BRIO', icon:ICONS.navAccueil },
   { id:'progres', label:'Progrès', icon:ICONS.navProgres },
+  { id:'stories', label:'Stories', icon:ICONS.navStories },
   { id:'recettes', label:'Recettes', icon:ICONS.navRecettes },
   { id:'reglages', label:'Réglages', icon:ICONS.navReglages },
 ];
@@ -3667,7 +3820,7 @@ function consumeDayFlipClass(){
 
 // Le bouton + (photo du repas) se glisse au milieu, entre Progrès et Recettes :
 // la barre compte 5 places, et la pastille saute la place du milieu.
-const NAV_PLUS_PLACE = 2;
+const NAV_PLUS_PLACE = 3;
 const navPlace = i => i >= NAV_PLUS_PLACE ? i + 1 : i;
 
 function bottomNavHtml(activeId){
@@ -3787,6 +3940,10 @@ let state = {
   showWeightHistoryList: false,
   showWeightMoreMenu: false,
   weightEntryDate: null,  // date de la pesée en cours de saisie
+  social: null,        // { profil, amities, profils } chargé à l'ouverture de Stories
+  stories: null,       // { chargement, liste, erreur }
+  storyVue: null,      // story ouverte en plein écran
+  amisRecherche: null, // { texte, resultats, encours }
   openCat: null,
   viewDate: null,        // jour affiché dans le tableau de bord Repas
   viewWeekOffset: 0,     // 0 = semaine en cours, -1 = semaine précédente, ...
@@ -4356,9 +4513,147 @@ function formatFullDateFR(d){
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
 }
 
+/* ---------------- amis et stories ----------------
+   Le journal reste strictement privé : cette couche ne touche jamais à la
+   table « donnees ». Les amis ne voient qu'une photo et un mot, jamais un
+   chiffre. Les règles d'accès sont dans supabase/stories.sql ; ce qui suit
+   n'est que la façade côté app — le serveur reste seul juge. */
+const EMOJIS_REACTION = ['👏','🔥','😍','💪','😋','🙌'];
+const STORY_POIDS_MAX = 900 * 1024;   // après réduction, en octets
+
+const social = (function(){
+
+  async function rest(chemin, options){
+    const rep = await nuage.api('/rest/v1/' + chemin, options || { method: 'GET' });
+    if (!rep.ok){
+      let detail = '';
+      try { const d = await rep.json(); detail = d.message || d.error || ''; } catch(e){}
+      throw erreurLisible(messageSocial(rep.status, detail));
+    }
+    if (rep.status === 204) return null;
+    const texte = await rep.text();
+    return texte ? JSON.parse(texte) : null;
+  }
+
+  // Les erreurs du serveur sont en anglais : on ne les montre jamais telles quelles.
+  function messageSocial(code, detail){
+    if (/duplicate key/i.test(detail)) return 'C’est déjà fait.';
+    if (/violates row-level security/i.test(detail)) return 'Tu n’as pas le droit de faire ça.';
+    if (/pseudo_check/i.test(detail)) return 'Le pseudo : 3 à 20 lettres, chiffres ou tirets bas.';
+    if (/profils_pseudo_key/i.test(detail)) return 'Ce pseudo est déjà pris.';
+    if (code === 401 || code === 403) return 'Reconnecte-toi pour continuer.';
+    return 'Le serveur n’a pas répondu comme prévu. Réessaie dans un instant.';
+  }
+
+  /* ----- profil ----- */
+  const monId = () => nuage.uid();
+
+  async function monProfil(){
+    const r = await rest('profils?select=*&user_id=eq.' + monId());
+    return (r && r[0]) || null;
+  }
+
+  async function poserProfil(pseudo){
+    await rest('profils', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({ user_id: monId(), pseudo, avatar: state.avatar || null }),
+    });
+  }
+
+  async function chercher(texte){
+    const q = String(texte || '').trim().replace(/[%,()]/g, '');
+    if (q.length < 2) return [];
+    return await rest('profils?select=user_id,pseudo,avatar&pseudo=ilike.*'
+      + encodeURIComponent(q) + '*&limit=12') || [];
+  }
+
+  /* ----- amitiés -----
+     Une seule ligne par paire, les deux identifiants triés : c'est ce qui
+     empêche A→B et B→A de coexister et de se contredire. */
+  const paire = (autre) => {
+    const moi = monId();
+    return moi < autre ? { petit: moi, grand: autre } : { petit: autre, grand: moi };
+  };
+
+  async function mesAmities(){
+    return await rest('amities?select=*') || [];
+  }
+
+  async function demander(autre){
+    const p = paire(autre);
+    await rest('amities', { method: 'POST', body: JSON.stringify(
+      Object.assign({}, p, { demandeur: monId(), etat: 'en_attente' })) });
+  }
+
+  async function repondre(petit, grand, etat){
+    await rest('amities?petit=eq.' + petit + '&grand=eq.' + grand,
+      { method: 'PATCH', body: JSON.stringify({ etat }) });
+  }
+
+  async function retirer(petit, grand){
+    await rest('amities?petit=eq.' + petit + '&grand=eq.' + grand, { method: 'DELETE' });
+  }
+
+  /* ----- stories ----- */
+  async function stories(){
+    return await rest('stories?select=id,auteur,chemin,mot,cree,expire,reactions(auteur,emoji)'
+      + '&expire=gt.' + new Date().toISOString() + '&order=cree.desc') || [];
+  }
+
+  // Le fichier part dans le bucket, la ligne ne garde que son chemin.
+  async function poserStory(dataUrl, mot){
+    const blob = await (await fetch(dataUrl)).blob();
+    if (blob.size > STORY_POIDS_MAX) throw erreurLisible('Photo trop lourde, même réduite.');
+    const chemin = monId() + '/' + Date.now().toString(36) + '.jpg';
+    const rep = await nuage.api('/storage/v1/object/stories/' + chemin, {
+      method: 'POST', headers: { 'Content-Type': blob.type || 'image/jpeg' }, body: blob,
+    });
+    if (!rep.ok) throw erreurLisible('L’envoi de la photo a échoué. Réessaie.');
+    await rest('stories', { method: 'POST', body: JSON.stringify(
+      { auteur: monId(), chemin, mot: (mot || '').trim().slice(0, 140) || null }) });
+  }
+
+  // Les photos ne sont pas publiques : il faut une adresse signée, valable une heure.
+  async function adressePhoto(chemin){
+    const rep = await nuage.api('/storage/v1/object/sign/stories/' + chemin,
+      { method: 'POST', body: JSON.stringify({ expiresIn: 3600 }) });
+    if (!rep.ok) return null;
+    const d = await rep.json();
+    return d && d.signedURL ? NUAGE_URL + '/storage/v1' + d.signedURL.replace(/^\/object/, '/object') : null;
+  }
+
+  async function supprimerStory(story){
+    await nuage.api('/storage/v1/object/stories/' + story.chemin, { method: 'DELETE' });
+    await rest('stories?id=eq.' + story.id, { method: 'DELETE' });
+  }
+
+  async function reagir(storyId, emoji){
+    await rest('reactions', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify({ story_id: storyId, auteur: monId(), emoji }),
+    });
+  }
+
+  // les profils de plusieurs personnes d'un coup, plutôt qu'un appel par tête
+  async function profilsDe(ids){
+    const liste = Array.from(new Set(ids)).filter(Boolean);
+    if (!liste.length) return {};
+    const r = await rest('profils?select=user_id,pseudo,avatar&user_id=in.('
+      + liste.join(',') + ')') || [];
+    const par = {};
+    r.forEach(p => { par[p.user_id] = p; });
+    return par;
+  }
+
+  return { monId, monProfil, poserProfil, chercher, mesAmities, demander, repondre,
+           retirer, stories, poserStory, adressePhoto, supprimerStory, reagir, profilsDe };
+})();
+
 /* ---------------- render router ---------------- */
-const MAIN_SCREENS = ['category','progres','recettes','reglages'];
-const LIGHT_SCREENS = [...MAIN_SCREENS, 'onboarding', 'welcome', 'gouts', 'intro', 'compte', 'recompenses'];
+const MAIN_SCREENS = ['category','progres','stories','recettes','reglages'];
+const LIGHT_SCREENS = [...MAIN_SCREENS, 'onboarding', 'welcome', 'gouts', 'intro', 'compte', 'recompenses', 'amis'];
 function render(){
   if (state.screen !== 'progres') feuillesDejaOuvertes = { poids:false, detail:false, historique:false };
   majEtatPoints();
@@ -4375,6 +4670,8 @@ function render(){
   if (state.screen === 'recettes') return renderRecettes();
   if (state.screen === 'reglages') return renderReglages();
   if (state.screen === 'recompenses') return renderRecompenses();
+  if (state.screen === 'stories') return renderStories();
+  if (state.screen === 'amis') return renderAmis();
 }
 
 /* ---------------- onboarding : parcours nouvel utilisateur ---------------- */
@@ -9326,7 +9623,6 @@ async function demanderChangementMotDePasse(){
    l'écran d'accueil et en tête de cet écran. */
 function ouvrirPseudo(){
   if (document.getElementById('pseudoFenetre')) return;
-  const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
   const actuel = state.userName || '';
   document.body.insertAdjacentHTML('beforeend', `
     <div class="rg-fenetre-fond" id="pseudoFenetre">
@@ -9580,6 +9876,428 @@ function renderRecompenses(){
   };
 }
 
+/* ---------------- écrans Stories et Amis ---------------- */
+
+// Une pastille ronde avec la photo de profil, ou l'initiale à défaut.
+function pastilleProfil(profil, classe){
+  const nom = (profil && profil.pseudo) || '?';
+  return profil && profil.avatar
+    ? `<span class="ami-pastille ${classe || ''}"><img src="${profil.avatar}" alt=""></span>`
+    : `<span class="ami-pastille ${classe || ''} sans-photo">${esc(nom.slice(0,1).toUpperCase())}</span>`;
+}
+
+const amiAutre = (a) => (a.petit === social.monId() ? a.grand : a.petit);
+
+// Charge ce qu'il faut pour les deux écrans.
+async function chargerSocial(){
+  state.social = { chargement: true };
+  render();
+  try {
+    const [profil, amities] = await Promise.all([social.monProfil(), social.mesAmities()]);
+    const profils = await social.profilsDe(amities.map(amiAutre));
+    state.social = { chargement: false, profil, amities, profils };
+  } catch(e){
+    state.social = { chargement: false, erreur: messageHumain(e) };
+  }
+  render();
+}
+
+async function chargerStories(){
+  state.stories = { chargement: true };
+  render();
+  try {
+    const liste = await social.stories();
+    const profils = await social.profilsDe(liste.map(x => x.auteur));
+    state.stories = { chargement: false, liste, profils };
+  } catch(e){
+    state.stories = { chargement: false, erreur: messageHumain(e) };
+  }
+  render();
+}
+
+function renderStories(){
+  // Les stories vivent en ligne : sans compte, il n'y a rien à montrer, et
+  // surtout rien à appeler. L'app hors ligne garde tout le reste.
+  if (!nuage.actif() || !nuage.connecte()){
+    app.innerHTML = `
+      <div class="screen-content ${consumeFadeClass()}">
+        <div class="repas-top"><h1>📸 Stories</h1></div>
+        <div class="recap-card rec-joker">
+          <p class="rec-joker-txt">Les stories ont besoin d’un compte : c’est lui qui
+            relie tes amis à toi. Ton journal, lui, marche très bien sans.</p>
+          ${nuage.actif() ? `<button class="btn-primary" id="storiesCompte">Créer mon compte</button>` : ''}
+        </div>
+      </div>` + bottomNavHtml('stories');
+    bindBottomNav('stories');
+    const b = document.getElementById('storiesCompte');
+    if (b) b.onclick = () => ouvrirCompte('inscription');
+    return;
+  }
+
+  const s = state.social;
+  const st = state.stories;
+  const moi = social.monId();
+  const sansPseudo = s && !s.chargement && !s.erreur && !s.profil;
+
+  const parAuteur = {};
+  ((st && st.liste) || []).forEach(x => { (parAuteur[x.auteur] = parAuteur[x.auteur] || []).push(x); });
+  const auteurs = Object.keys(parAuteur).filter(a => a !== moi);
+  const miennes = parAuteur[moi] || [];
+  const aDesAmis = ((s && s.amities) || []).some(a => a.etat === 'acceptee');
+
+  const corps = (st && st.chargement)
+    ? `<p class="onboard-q">Chargement…</p>`
+    : (st && st.erreur)
+      ? `<p class="onboard-hint">${esc(st.erreur)}</p>`
+      : `
+        <div class="story-rangee">
+          <button class="story-anneau ${miennes.length ? 'plein' : 'ajout'}" id="storyAjout">
+            <span class="story-cercle">${miennes.length
+              ? pastilleProfil(s && s.profil, 'grande')
+              : `<span class="story-plus">+</span>`}</span>
+            <span class="story-nom">${miennes.length ? 'Ta story' : 'Ajouter'}</span>
+          </button>
+          ${auteurs.map(a => `
+            <button class="story-anneau plein" data-auteur="${a}">
+              <span class="story-cercle">${pastilleProfil(st.profils[a], 'grande')}</span>
+              <span class="story-nom">${esc((st.profils[a] && st.profils[a].pseudo) || '…')}</span>
+            </button>`).join('')}
+        </div>
+        ${!auteurs.length ? `<p class="story-vide-texte">${aDesAmis
+          ? 'Aucun de tes amis n’a publié aujourd’hui.'
+          : 'Ajoute des amis pour voir leurs plats du jour.'}</p>` : ''}
+      `;
+
+  app.innerHTML = `
+    <div class="screen-content ${consumeFadeClass()}">
+      <div class="repas-top repas-top-serie">
+        <div><h1>📸 Stories</h1>
+          <p class="message-jour">Tes plats du jour, et ceux de tes amis.</p></div>
+        <button class="serie-pastille pastille-brioche" id="versAmis" title="Mes amis" aria-label="Mes amis">
+          <span class="serie-flamme">👥</span>
+        </button>
+      </div>
+      ${sansPseudo ? `
+        <div class="recap-card rec-joker">
+          <p class="rec-joker-txt">Choisis un pseudo pour que tes amis puissent te trouver.</p>
+          <button class="btn-primary" id="storyPseudo">Choisir mon pseudo</button>
+        </div>` : corps}
+    </div>
+  ` + bottomNavHtml('stories');
+
+  bindBottomNav('stories');
+  document.getElementById('versAmis').onclick = () => { state.screen = 'amis'; navFade = true; render(); };
+  const bp = document.getElementById('storyPseudo');
+  if (bp) bp.onclick = () => { state.screen = 'amis'; navFade = true; render(); };
+  const ajout = document.getElementById('storyAjout');
+  if (ajout) ajout.onclick = () => miennes.length ? ouvrirStory(miennes, 0) : ouvrirPriseStory();
+  app.querySelectorAll('.story-anneau[data-auteur]').forEach(btn => {
+    btn.onclick = () => ouvrirStory(parAuteur[btn.dataset.auteur], 0);
+  });
+
+  // on charge après le rendu, pour que l'écran s'affiche tout de suite
+  if (!state.social) setTimeout(chargerSocial, 0);
+  else if (!s.chargement && !s.erreur && s.profil && !state.stories) setTimeout(chargerStories, 0);
+}
+
+function renderAmis(){
+  if (!nuage.actif() || !nuage.connecte()){ state.screen = 'stories'; return renderStories(); }
+  const s = state.social;
+  const moi = social.monId();
+  const rech = state.amisRecherche || { texte: '', resultats: [] };
+  const retour = () => { state.screen = 'stories'; navFade = true; render(); };
+
+  if (!s || s.chargement){
+    app.innerHTML = `<div class="screen-content"><div class="cat-header">
+      <button class="back-btn" id="amisBack">${ICONS.back}</button>
+      <h1 class="rec-titre">Mes amis</h1></div>
+      <p class="onboard-q">Chargement…</p></div>` + bottomNavHtml('stories');
+    bindBottomNav('stories');
+    document.getElementById('amisBack').onclick = retour;
+    return;
+  }
+
+  const amities = s.amities || [];
+  const recues   = amities.filter(a => a.etat === 'en_attente' && a.demandeur !== moi);
+  const envoyees = amities.filter(a => a.etat === 'en_attente' && a.demandeur === moi);
+  const amis     = amities.filter(a => a.etat === 'acceptee');
+  const dejaVus  = new Set(amities.map(amiAutre));
+  const nouveaux = (rech.resultats || []).filter(r => r.user_id !== moi && !dejaVus.has(r.user_id));
+
+  const ligneAmi = (a, boutons) => {
+    const autre = amiAutre(a);
+    const p = s.profils[autre];
+    return `<div class="ami-ligne">${pastilleProfil(p)}
+      <span class="ami-nom">${esc((p && p.pseudo) || 'quelqu’un')}</span>
+      <span class="ami-actions">${boutons}</span></div>`;
+  };
+
+  app.innerHTML = `
+    <div class="screen-content ${consumeFadeClass()}">
+      <div class="cat-header">
+        <button class="back-btn" id="amisBack">${ICONS.back}</button>
+        <h1 class="rec-titre">Mes amis</h1>
+      </div>
+
+      <div class="rg-section">
+        <div class="rg-section-titre">Mon pseudo</div>
+        <div class="recap-card rec-joker">
+          <p class="rec-joker-txt">${s.profil
+            ? `Tes amis te trouvent sous <b>${esc(s.profil.pseudo)}</b>.`
+            : 'Choisis un pseudo pour être trouvable.'}</p>
+          <div class="water-custom-row">
+            <input type="text" id="amiPseudo" maxlength="20" placeholder="3 à 20 caractères"
+              value="${s.profil ? esc(s.profil.pseudo) : ''}">
+            <button class="water-custom-add" id="amiPseudoOk">${s.profil ? 'Changer' : 'Choisir'}</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rg-section">
+        <div class="rg-section-titre">Ajouter quelqu’un</div>
+        <div class="recap-card rec-joker">
+          <div class="water-custom-row">
+            <input type="text" id="amiRech" placeholder="Chercher un pseudo" value="${esc(rech.texte)}">
+            <button class="water-custom-add" id="amiRechOk">Chercher</button>
+          </div>
+          ${rech.encours ? `<p class="rec-joker-txt">Recherche…</p>` : ''}
+          ${nouveaux.map(r => `<div class="ami-ligne">${pastilleProfil(r)}
+            <span class="ami-nom">${esc(r.pseudo)}</span>
+            <span class="ami-actions"><button class="ami-btn" data-demander="${r.user_id}">Ajouter</button></span>
+          </div>`).join('')}
+          ${(rech.texte && !rech.encours && !nouveaux.length)
+            ? `<p class="rec-joker-txt">Personne de nouveau sous ce pseudo.</p>` : ''}
+        </div>
+      </div>
+
+      ${recues.length ? `
+      <div class="rg-section">
+        <div class="rg-section-titre">Demandes reçues</div>
+        <div class="recap-card rec-joker">
+          ${recues.map(a => ligneAmi(a,
+            `<button class="ami-btn" data-oui="${a.petit}|${a.grand}">Accepter</button>
+             <button class="ami-btn discret" data-non="${a.petit}|${a.grand}">Refuser</button>`)).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="rg-section">
+        <div class="rg-section-titre">Mes amis${amis.length ? ` (${amis.length})` : ''}</div>
+        <div class="recap-card rec-joker">
+          ${amis.length
+            ? amis.map(a => ligneAmi(a, `<button class="ami-btn discret" data-retirer="${a.petit}|${a.grand}">Retirer</button>`)).join('')
+            : `<p class="rec-joker-txt">Personne pour l’instant.</p>`}
+          ${envoyees.map(a => ligneAmi(a, `<span class="ami-attente">En attente</span>`)).join('')}
+        </div>
+      </div>
+    </div>
+  ` + bottomNavHtml('stories');
+
+  bindBottomNav('stories');
+  document.getElementById('amisBack').onclick = retour;
+
+  const agir = async (faire) => {
+    try { await faire(); await chargerSocial(); }
+    catch(e){ showToast(messageHumain(e)); }
+  };
+
+  document.getElementById('amiPseudoOk').onclick = () => {
+    const v = document.getElementById('amiPseudo').value.trim();
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(v)){ showToast('3 à 20 lettres, chiffres ou tirets bas'); return; }
+    agir(() => social.poserProfil(v));
+  };
+
+  const lancerRecherche = async () => {
+    const texte = document.getElementById('amiRech').value.trim();
+    state.amisRecherche = { texte, resultats: [], encours: true };
+    render();
+    try { state.amisRecherche = { texte, resultats: await social.chercher(texte) }; }
+    catch(e){ state.amisRecherche = { texte, resultats: [] }; showToast(messageHumain(e)); }
+    render();
+  };
+  document.getElementById('amiRechOk').onclick = lancerRecherche;
+  document.getElementById('amiRech').onkeydown = (e) => { if (e.key === 'Enter') lancerRecherche(); };
+
+  app.querySelectorAll('[data-demander]').forEach(b => {
+    b.onclick = () => agir(() => social.demander(b.dataset.demander));
+  });
+  const paireDe = (v) => v.split('|');
+  app.querySelectorAll('[data-oui]').forEach(b => {
+    b.onclick = () => { const [p,g] = paireDe(b.dataset.oui); agir(() => social.repondre(p, g, 'acceptee')); };
+  });
+  app.querySelectorAll('[data-non]').forEach(b => {
+    b.onclick = () => { const [p,g] = paireDe(b.dataset.non); agir(() => social.retirer(p, g)); };
+  });
+  app.querySelectorAll('[data-retirer]').forEach(b => {
+    b.onclick = () => { const [p,g] = paireDe(b.dataset.retirer); agir(() => social.retirer(p, g)); };
+  });
+}
+
+/* ----- la visionneuse plein écran, posée par-dessus comme les autres voiles ----- */
+async function ouvrirStory(liste, index){
+  if (!liste || !liste.length || document.getElementById('storyVue')) return;
+  const moi = social.monId();
+  let i = Math.max(0, Math.min(index || 0, liste.length - 1));
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="story-vue" id="storyVue" role="dialog" aria-modal="true">
+      <div class="story-barres" id="storyBarres"></div>
+      <button class="story-fermer" id="storyFermer" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <div class="story-auteur" id="storyAuteur"></div>
+      <div class="story-image" id="storyImage"><span class="story-chargement">…</span></div>
+      <div class="story-bas" id="storyBas"></div>
+      <button class="story-cote gauche" id="storyPrec" aria-label="Précédente"></button>
+      <button class="story-cote droite" id="storySuiv" aria-label="Suivante"></button>
+    </div>`);
+
+  const voile = document.getElementById('storyVue');
+  const fermer = () => {
+    document.removeEventListener('keydown', surTouche);
+    voile.classList.add('sortie');
+    setTimeout(() => voile.remove(), 200);
+  };
+  const surTouche = (e) => {
+    if (e.key === 'Escape') fermer();
+    if (e.key === 'ArrowRight') aller(1);
+    if (e.key === 'ArrowLeft') aller(-1);
+  };
+  const aller = (pas) => {
+    const suivant = i + pas;
+    if (suivant < 0) return;
+    if (suivant >= liste.length) return fermer();
+    i = suivant;
+    peindre();
+  };
+
+  async function peindre(){
+    const st = liste[i];
+    const profil = (state.stories && state.stories.profils && state.stories.profils[st.auteur]) || null;
+    const sienne = st.auteur === moi;
+
+    document.getElementById('storyBarres').innerHTML =
+      liste.map((_, k) => `<span class="story-barre ${k <= i ? 'faite' : ''}"></span>`).join('');
+
+    const heures = Math.max(0, Math.round((Date.now() - new Date(st.cree).getTime()) / 3600000));
+    document.getElementById('storyAuteur').innerHTML =
+      `${pastilleProfil(sienne ? (state.social && state.social.profil) : profil)}
+       <span class="story-auteur-nom">${sienne ? 'Toi' : esc((profil && profil.pseudo) || '…')}</span>
+       <span class="story-auteur-heure">il y a ${heures} h</span>`;
+
+    // Les réactions des autres sur ma story ; les six emojis sur celle d'un ami.
+    const reactions = st.reactions || [];
+    document.getElementById('storyBas').innerHTML = `
+      ${st.mot ? `<div class="story-mot">${esc(st.mot)}</div>` : ''}
+      ${sienne
+        ? `<div class="story-recues">${reactions.length
+             ? reactions.map(r => `<span class="story-recue">${r.emoji}</span>`).join('')
+             : '<span class="story-recues-vide">Personne n’a encore réagi.</span>'}
+           </div>
+           <button class="story-supprimer" id="storySupprimer">Supprimer ma story</button>`
+        : `<div class="story-emojis">${EMOJIS_REACTION.map(e => {
+             const mien = reactions.some(r => r.auteur === moi && r.emoji === e);
+             return `<button class="story-emoji ${mien ? 'choisi' : ''}" data-emoji="${e}">${e}</button>`;
+           }).join('')}</div>`}
+    `;
+
+    const zone = document.getElementById('storyImage');
+    zone.innerHTML = '<span class="story-chargement">…</span>';
+    let url = null;
+    try { url = await social.adressePhoto(st.chemin); } catch(e){}
+    if (!document.getElementById('storyVue') || liste[i] !== st) return;
+    zone.innerHTML = url
+      ? `<img src="${url}" alt="${st.mot ? esc(st.mot) : 'Photo'}">`
+      : `<span class="story-chargement">Photo indisponible</span>`;
+
+    const sup = document.getElementById('storySupprimer');
+    if (sup) sup.onclick = async () => {
+      try { await social.supprimerStory(st); fermer(); await chargerStories(); }
+      catch(e){ showToast(messageHumain(e)); }
+    };
+    voile.querySelectorAll('.story-emoji').forEach(b => {
+      b.onclick = async (ev) => {
+        ev.stopPropagation();
+        const emoji = b.dataset.emoji;
+        voile.querySelectorAll('.story-emoji').forEach(x => x.classList.remove('choisi'));
+        b.classList.add('choisi');
+        st.reactions = (st.reactions || []).filter(r => r.auteur !== moi).concat([{ auteur: moi, emoji }]);
+        try { await social.reagir(st.id, emoji); } catch(e){ showToast(messageHumain(e)); }
+      };
+    });
+  }
+
+  document.getElementById('storyFermer').onclick = fermer;
+  document.getElementById('storyPrec').onclick = () => aller(-1);
+  document.getElementById('storySuiv').onclick = () => aller(1);
+  document.addEventListener('keydown', surTouche);
+  peindre();
+}
+
+/* ----- poser sa story : une photo, un mot ----- */
+function ouvrirPriseStory(){
+  if (document.getElementById('storyPrise')) return;
+  let photo = null;
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="confirm-fond" id="storyPrise">
+      <div class="confirm-boite story-boite" role="dialog" aria-modal="true">
+        <div class="confirm-titre">Ta story du jour</div>
+        <div class="confirm-texte">Une photo de ton plat et un mot. Tes amis la verront
+          pendant vingt-quatre heures, sans aucun de tes chiffres.</div>
+        <input type="file" accept="image/*" id="storyFichier" hidden>
+        <button class="story-cadre" id="storyChoisir">
+          <span class="story-cadre-texte">Choisir une photo</span>
+        </button>
+        <input type="text" id="storyMot" maxlength="140" placeholder="Ton petit mot (facultatif)">
+        <div class="confirm-actions">
+          <button class="confirm-btn confirm-annuler" id="storyNon">Annuler</button>
+          <button class="confirm-btn confirm-acheter" id="storyOui" disabled>Publier</button>
+        </div>
+      </div>
+    </div>`);
+
+  const fond = document.getElementById('storyPrise');
+  const fermer = () => { fond.classList.add('sortie'); setTimeout(() => fond.remove(), 180); };
+  const fichier = document.getElementById('storyFichier');
+  const cadre = document.getElementById('storyChoisir');
+  const publier = document.getElementById('storyOui');
+
+  cadre.onclick = () => fichier.click();
+  fichier.onchange = async () => {
+    const f = fichier.files && fichier.files[0];
+    fichier.value = '';
+    if (!f) return;
+    if (!/^image\//.test(f.type)){ showToast('Choisis une image'); return; }
+    cadre.innerHTML = '<span class="story-cadre-texte">…</span>';
+    try {
+      photo = await reduireAvatar(f, 900);
+      cadre.innerHTML = `<img src="${photo}" alt="">`;
+      publier.disabled = false;
+    } catch(e){
+      cadre.innerHTML = '<span class="story-cadre-texte">Image illisible</span>';
+      showToast('Image illisible');
+    }
+  };
+
+  document.getElementById('storyNon').onclick = fermer;
+  publier.onclick = async () => {
+    if (!photo) return;
+    publier.disabled = true;
+    publier.textContent = 'Envoi…';
+    try {
+      await social.poserStory(photo, document.getElementById('storyMot').value);
+      fermer();
+      showToast('Story publiée');
+      await chargerStories();
+    } catch(e){
+      publier.disabled = false;
+      publier.textContent = 'Publier';
+      showToast(messageHumain(e));
+    }
+  };
+  fond.onclick = (ev) => { if (ev.target === fond) fermer(); };
+}
+
 function renderReglages(){
   const goals = state.macroGoals || {};
   const b = state.body || {};
@@ -9589,7 +10307,6 @@ function renderReglages(){
   const neat = NEAT_LEVELS.find(l => l.id === b.activite);
   const freq = TRAINING_FREQS.find(t => t.id === b.entrainementFreq);
   const pace = o && b.rythme != null ? o.paces[paceIndex(b)] : null;
-  const esc = t => String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 
   const prenom = state.userName || 'Mon compte';
   const email = (state.compte && state.compte.email) || null;
