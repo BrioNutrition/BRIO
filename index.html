@@ -2595,8 +2595,12 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .story-vue{
     position:fixed;inset:0;z-index:70;background:#14101F;
     display:flex;flex-direction:column;align-items:center;
-    animation:fondApparait .2s ease;transition:opacity .2s ease;
+    animation:fondApparait .2s ease;
+    /* on la fait glisser au doigt : le navigateur ne doit pas prendre le geste */
+    touch-action:none;will-change:transform;
+    transition:opacity .2s ease,transform .28s cubic-bezier(.2,.9,.3,1);
   }
+  .story-vue.glisse{transition:none;}
   .story-vue.sortie{opacity:0;}
   .story-barres{
     display:flex;gap:4px;width:100%;padding:calc(12px + env(safe-area-inset-top)) 14px 0;
@@ -2635,7 +2639,6 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .story-emoji:active{transform:scale(.9);}
   .story-emoji.choisi{background:rgba(255,255,255,.34);transform:scale(1.08);}
   .story-recues{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;}
-  .story-recue{font-size:21px;}
   .story-recues-vide{font-size:12.5px;color:rgba(255,255,255,.55);}
   .story-supprimer{
     display:block;margin:0 auto;border:none;background:rgba(255,255,255,.12);
@@ -2650,6 +2653,58 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .story-cote.gauche{left:0;}
   .story-cote.droite{right:0;}
 
+  /* ---------- les réactions : un pop bien visible, puis des bulles qui flottent ---------- */
+  /* la couche s'arrête au-dessus des emojis et sous l'en-tête : les bulles
+     traversent la photo, jamais les commandes */
+  .story-bulles{
+    position:absolute;left:0;right:0;top:62px;bottom:104px;
+    z-index:1;pointer-events:none;overflow:hidden;
+  }
+  .story-bulle{
+    position:absolute;bottom:-56px;
+    width:44px;height:44px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:23px;line-height:1;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    animation:bulleFlotte var(--duree,16s) linear var(--retard,0s) infinite;
+  }
+  /* elles montent en zigzaguant, doucement, et repartent en bas sans fin */
+  @keyframes bulleFlotte{
+    0%  {transform:translate(0,0) scale(.72);opacity:0;}
+    10% {opacity:.92;}
+    35% {transform:translate(var(--derive,18px),-32vh) scale(1);opacity:.92;}
+    65% {transform:translate(calc(var(--derive,18px) * -1),-64vh) scale(.94);opacity:.92;}
+    90% {opacity:.85;}
+    100%{transform:translate(0,-108vh) scale(.78);opacity:0;}
+  }
+  .story-pop{
+    position:absolute;left:50%;top:50%;z-index:4;pointer-events:none;
+    font-size:76px;line-height:1;opacity:0;
+    animation:emojiPop 1s cubic-bezier(.2,1.1,.3,1) forwards;
+  }
+  @keyframes emojiPop{
+    0%  {opacity:0;transform:translate(-50%,-50%) scale(.25) rotate(-12deg);}
+    28% {opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(5deg);}
+    48% {opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0deg);}
+    100%{opacity:0;transform:translate(-50%,-190%) scale(.72) rotate(0deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    /* pas de mouvement : les bulles se posent simplement sur la photo */
+    .story-bulle{animation:none;bottom:auto;top:var(--haut,50%);opacity:.92;}
+    .story-pop{animation-duration:.45s;}
+    .story-vue{transition:opacity .2s ease;}
+  }
+
+  /* ---------- le refus, bien au milieu de l'écran, pas un toast qui file ---------- */
+  .story-alerte{z-index:100;background:rgba(24,18,44,.46);}
+  .story-alerte .confirm-boite{max-width:300px;}
+  .story-alerte-emoji{font-size:38px;line-height:1;margin-bottom:10px;}
+  .story-alerte-btn{
+    width:100%;margin-top:18px;border:none;border-radius:999px;padding:12px 0;
+    background:#7B4FE0;color:#fff;font-family:inherit;font-size:14px;font-weight:700;
+  }
+  .story-alerte-btn:active{transform:scale(.97);}
+
   /* ---------- poser sa story ---------- */
   .story-boite{max-width:340px;}
   .story-cadre{
@@ -2660,11 +2715,6 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   }
   .story-cadre img{width:100%;height:100%;object-fit:cover;display:block;}
   .story-cadre-texte{font-size:13px;font-weight:700;color:#7B4FE0;}
-  #storyMot{
-    width:100%;border:1px solid #DCC6F2;border-radius:12px;padding:10px 12px;
-    font-family:inherit;font-size:14px;background:rgba(255,255,255,.75);color:#1C1730;
-  }
-  #storyMot:focus{outline:none;border-color:#7B4FE0;}
 
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
@@ -3337,6 +3387,7 @@ html.sombre .stat-verre.rouge{background:rgba(253,149,61,0.14)}
 html.sombre .stat-barre.atteint > div{background:#43A047}
 html.sombre .stat-brioche{color:#EEECF4}
 html.sombre .confirm-fond{background:rgba(28,23,48,.28)}
+html.sombre .confirm-fond.story-alerte{background:rgba(10,6,22,.58)}
 html.sombre .confirm-boite{background:rgba(46,37,72,0.892);border:1px solid rgba(255,255,255,0.128);box-shadow:0 12px 36px rgba(28,23,48,.2);color:#EDECF4}
 html.sombre .confirm-texte{color:#D6D4DE}
 html.sombre .confirm-texte strong{color:#EDECF4}
@@ -3645,7 +3696,6 @@ html.sombre .story-plus{background:rgba(46,37,72,.85);color:#A98DF0}
 html.sombre .story-anneau.ajout .story-cercle{background:rgba(169,141,240,.22)}
 html.sombre .story-cadre{border-color:rgba(169,141,240,.45);background:rgba(169,141,240,.08)}
 html.sombre .story-cadre-texte{color:#A98DF0}
-html.sombre #storyMot{border-color:rgba(255,255,255,.14);background:rgba(46,37,72,.76);color:#EDECF4}
 html.sombre .rec-niveau{color:#EDECF4}
 html.sombre .rec-vers{color:#AAA5B7}
 html.sombre .rec-barre{background:rgba(169,141,240,.2)}
@@ -10310,6 +10360,76 @@ function renderAmis(){
   });
 }
 
+/* Un refus doit se voir : plein milieu de l'écran, et il attend qu'on le lise,
+   contrairement au toast qui s'efface tout seul au bout de deux secondes. */
+function alerteMilieu(titre, texte, emoji){
+  const vieille = document.getElementById('storyAlerte');
+  if (vieille) vieille.remove();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="confirm-fond story-alerte" id="storyAlerte" role="alertdialog" aria-modal="true">
+      <div class="confirm-boite">
+        <div class="story-alerte-emoji" aria-hidden="true">${emoji || '🙅'}</div>
+        <div class="confirm-titre">${esc(titre)}</div>
+        <div class="confirm-texte">${esc(texte)}</div>
+        <button class="story-alerte-btn" id="storyAlerteOk">J’ai compris</button>
+      </div>
+    </div>`);
+  const fond = document.getElementById('storyAlerte');
+  const fermer = () => { fond.classList.add('sortie'); setTimeout(() => fond.remove(), 180); };
+  document.getElementById('storyAlerteOk').onclick = fermer;
+  fond.onclick = (ev) => { if (ev.target === fond) fermer(); };
+}
+
+/* ----- les réactions restent à l'écran, en bulles qui montent en zigzaguant ----- */
+const BULLES_MAX = 14;
+
+/* Chaque bulle tire sa trajectoire de son rang : pas de hasard, donc pas de
+   grappe de bulles superposées, et le même emoji retombe toujours au même endroit. */
+function faireBulle(emoji, k, enRoute){
+  const gauche  = 7 + ((k * 37) % 79);            // en pourcentage de la largeur
+  const duree   = 13 + ((k * 5) % 9);             // secondes pour traverser
+  const derive  = (k % 2 ? 1 : -1) * (12 + (k % 4) * 7);
+  const haut    = 12 + ((k * 23) % 66);           // seulement si l'animation est coupée
+  // un retard négatif démarre l'animation en cours de route : à l'ouverture,
+  // les bulles sont déjà réparties sur la hauteur au lieu de sortir toutes du bas
+  const retard  = enRoute ? -(((k * 3.7 + 2.3) % duree).toFixed(1)) : 0;
+  const el = document.createElement('span');
+  el.className = 'story-bulle';
+  el.textContent = emoji;
+  el.style.left = gauche + '%';
+  el.style.setProperty('--duree', duree + 's');
+  el.style.setProperty('--retard', retard + 's');
+  el.style.setProperty('--derive', derive + 'px');
+  el.style.setProperty('--haut', haut + '%');
+  return el;
+}
+
+function poserBulles(reactions){
+  const couche = document.getElementById('storyBulles');
+  if (!couche) return;
+  couche.innerHTML = '';
+  (reactions || []).slice(-BULLES_MAX)
+    .forEach((r, k) => couche.appendChild(faireBulle(r.emoji, k, true)));
+}
+
+function ajouterBulle(emoji){
+  const couche = document.getElementById('storyBulles');
+  if (!couche) return;
+  if (couche.children.length >= BULLES_MAX) couche.firstElementChild.remove();
+  couche.appendChild(faireBulle(emoji, couche.children.length, false));
+}
+
+/* Le gros emoji qui jaillit au moment où on appuie. */
+function popEmoji(emoji){
+  const voile = document.getElementById('storyVue');
+  if (!voile) return;
+  const el = document.createElement('span');
+  el.className = 'story-pop';
+  el.textContent = emoji;
+  voile.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+
 /* ----- la visionneuse plein écran, posée par-dessus comme les autres voiles ----- */
 async function ouvrirStory(liste, index){
   if (!liste || !liste.length || document.getElementById('storyVue')) return;
@@ -10323,6 +10443,7 @@ async function ouvrirStory(liste, index){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <div class="story-auteur" id="storyAuteur"></div>
+      <div class="story-bulles" id="storyBulles" aria-hidden="true"></div>
       <div class="story-image" id="storyImage"><span class="story-chargement">…</span></div>
       <div class="story-bas" id="storyBas"></div>
       <button class="story-cote gauche" id="storyPrec" aria-label="Précédente"></button>
@@ -10367,10 +10488,8 @@ async function ouvrirStory(liste, index){
     document.getElementById('storyBas').innerHTML = `
       ${st.mot ? `<div class="story-mot">${esc(st.mot)}</div>` : ''}
       ${sienne
-        ? `<div class="story-recues">${reactions.length
-             ? reactions.map(r => `<span class="story-recue">${r.emoji}</span>`).join('')
-             : '<span class="story-recues-vide">Personne n’a encore réagi.</span>'}
-           </div>
+        ? `${reactions.length ? '' :
+             '<div class="story-recues"><span class="story-recues-vide">Personne n’a encore réagi.</span></div>'}
            <button class="story-supprimer" id="storySupprimer">Supprimer ma story</button>`
         : `<div class="story-emojis">${EMOJIS_REACTION.map(e => {
              const mien = reactions.some(r => r.auteur === moi && r.emoji === e);
@@ -10392,12 +10511,15 @@ async function ouvrirStory(liste, index){
       try { await social.supprimerStory(st); fermer(); await chargerStories(); }
       catch(e){ showToast(messageHumain(e)); }
     };
+    poserBulles(reactions);
     voile.querySelectorAll('.story-emoji').forEach(b => {
       b.onclick = async (ev) => {
         ev.stopPropagation();
         const emoji = b.dataset.emoji;
         voile.querySelectorAll('.story-emoji').forEach(x => x.classList.remove('choisi'));
         b.classList.add('choisi');
+        popEmoji(emoji);
+        ajouterBulle(emoji);
         st.reactions = (st.reactions || []).filter(r => r.auteur !== moi).concat([{ auteur: moi, emoji }]);
         try { await social.reagir(st.id, emoji); } catch(e){ showToast(messageHumain(e)); }
       };
@@ -10408,6 +10530,56 @@ async function ouvrirStory(liste, index){
   document.getElementById('storyPrec').onclick = () => aller(-1);
   document.getElementById('storySuiv').onclick = () => aller(1);
   document.addEventListener('keydown', surTouche);
+
+  /* Glisser la photo vers le bas pour sortir, comme les feuilles de l'app.
+     Les commandes du bas et la croix gardent leur geste à elles. */
+  let debut = null, tire = 0, aGlisse = false;
+  const saisissable = (cible) =>
+    !(cible.closest && cible.closest('.story-emoji, .story-supprimer, .story-fermer'));
+
+  const fermerParLeBas = () => {
+    document.removeEventListener('keydown', surTouche);
+    voile.classList.remove('glisse');
+    voile.style.transform = 'translateY(100%)';
+    voile.style.opacity = '0';
+    setTimeout(() => voile.remove(), 260);
+  };
+
+  voile.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return;
+    if (!saisissable(e.target)) return;
+    debut = { x: e.clientX, y: e.clientY };
+    tire = 0; aGlisse = false;
+    voile.classList.add('glisse');
+  });
+  voile.addEventListener('pointermove', (e) => {
+    if (!debut) return;
+    const dy = e.clientY - debut.y, dx = e.clientX - debut.x;
+    // on n'attrape que la descente, et pas quand le doigt part de côté
+    if (!aGlisse && (dy < 8 || Math.abs(dx) > dy)) return;
+    aGlisse = true;
+    tire = Math.max(0, dy);
+    voile.style.transform = `translateY(${tire}px)`;
+    voile.style.opacity = String(Math.max(.3, 1 - tire / 520));
+  });
+  const relacher = () => {
+    if (!debut) return;
+    const parcouru = tire;
+    debut = null;
+    voile.classList.remove('glisse');
+    if (parcouru > 110) return fermerParLeBas();
+    voile.style.transform = '';
+    voile.style.opacity = '';
+  };
+  voile.addEventListener('pointerup', relacher);
+  voile.addEventListener('pointercancel', relacher);
+  // un glissement ne doit pas se finir en clic sur la moitié d'écran qu'il survole
+  voile.addEventListener('click', (e) => {
+    if (!aGlisse) return;
+    aGlisse = false;
+    e.stopPropagation(); e.preventDefault();
+  }, true);
+
   peindre();
 }
 
@@ -10447,14 +10619,13 @@ function ouvrirPriseStory(){
     <div class="confirm-fond" id="storyPrise">
       <div class="confirm-boite story-boite" role="dialog" aria-modal="true">
         <div class="confirm-titre">Ta story du jour</div>
-        <div class="confirm-texte">Une photo de ton plat et un mot. Tes amis la verront
+        <div class="confirm-texte">Une photo de ton plat, rien d’autre. Tes amis la verront
           pendant vingt-quatre heures, sans aucun de tes chiffres. Seules les photos
           de nourriture passent.</div>
         <input type="file" accept="image/*" id="storyFichier" hidden>
         <button class="story-cadre" id="storyChoisir">
           <span class="story-cadre-texte">Choisir une photo</span>
         </button>
-        <input type="text" id="storyMot" maxlength="140" placeholder="Ton petit mot (facultatif)">
         <div class="confirm-actions">
           <button class="confirm-btn confirm-annuler" id="storyNon">Annuler</button>
           <button class="confirm-btn confirm-acheter" id="storyOui" disabled>Publier</button>
@@ -10494,18 +10665,20 @@ function ouvrirPriseStory(){
       if (!await estUnPlat(photo)){
         publier.disabled = false;
         publier.textContent = 'Publier';
-        showToast('Les stories ne montrent que des plats');
+        alerteMilieu('Ce n’est pas un plat',
+          'Les stories ne montrent que de la nourriture : une assiette, un plat, une boisson. Choisis une autre photo.',
+          '🍽️');
         return;
       }
       publier.textContent = 'Envoi…';
-      await social.poserStory(photo, document.getElementById('storyMot').value);
+      await social.poserStory(photo, '');
       fermer();
       showToast('Story publiée');
       await chargerStories();
     } catch(e){
       publier.disabled = false;
       publier.textContent = 'Publier';
-      showToast(messageHumain(e));
+      alerteMilieu('Publication impossible', messageHumain(e), '⚠️');
     }
   };
   fond.onclick = (ev) => { if (ev.target === fond) fermer(); };
