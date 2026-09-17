@@ -572,7 +572,10 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     padding:28px 20px 60px;
     position:relative;
   }
-  #app.with-nav{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px);}
+  #app.with-nav{padding-bottom:calc(30px + var(--barre-h));}
+  /* seule la page du journal porte le bouton flottant : elle seule lui réserve
+     de la place */
+  #app.with-nav.avec-plus{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px);}
   .screen-content{perspective:900px;}
   .screen-fade{animation:screenFadeIn .18s ease;}
   @keyframes screenFadeIn{
@@ -2666,7 +2669,8 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
   /* la barre, le bouton qui flotte au-dessus, et de quoi respirer */
-  #app.with-nav{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px + env(safe-area-inset-bottom));}
+  #app.with-nav{padding-bottom:calc(30px + var(--barre-h) + env(safe-area-inset-bottom));}
+  #app.with-nav.avec-plus{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px + env(safe-area-inset-bottom));}
   .bottom-nav{bottom:calc(18px + env(safe-area-inset-bottom));}
   .toast{bottom:calc(26px + env(safe-area-inset-bottom));}
   .weight-sheet{padding-bottom:calc(32px + env(safe-area-inset-bottom));}
@@ -3865,9 +3869,10 @@ function bottomNavHtml(activeId){
     <div class="nav-pill-slider" id="navSlider" style="transform:translateX(${activeIndex*100}%)"></div>
     ${boutons.join('')}
   </div>
-  <button class="nav-plus" id="navPlus" aria-label="Ajouter un repas en photo">
-    <span class="nav-plus-rond"><span class="nav-plus-signe">+</span></span>
-  </button>`;
+  ${activeId === 'category' ? `
+    <button class="nav-plus" id="navPlus" aria-label="Ajouter un repas en photo">
+      <span class="nav-plus-rond"><span class="nav-plus-signe">+</span></span>
+    </button>` : ''}`;
 }
 
 // Place la pastille exactement sous l'onglet actif, au pixel près (même largeur,
@@ -4691,6 +4696,7 @@ function render(){
   if (state.screen !== 'stories' && state.screen !== 'amis') tempsReel.arreter();
   app.classList.toggle('repas-theme', LIGHT_SCREENS.includes(state.screen));
   app.classList.toggle('with-nav', MAIN_SCREENS.includes(state.screen));
+  app.classList.toggle('avec-plus', state.screen === 'category');
 
   if (state.screen === 'intro') return renderIntro();
   if (state.screen === 'compte') return renderCompte();
@@ -10405,6 +10411,33 @@ async function ouvrirStory(liste, index){
   peindre();
 }
 
+/* Une story ne montre que de la nourriture. Le même modèle que l'analyse des
+   repas tranche, sur une question fermée. Si le contrôle ne peut pas
+   s'exécuter — pas de réseau, relais absent, quota épuisé — la photo ne part
+   pas : un filtre qui laisse passer dès qu'il faiblit n'est pas un filtre. */
+async function estUnPlat(dataUrl){
+  const base64 = String(dataUrl).split(',')[1] || '';
+  const corps = {
+    model: PHOTO_MODELE,
+    max_tokens: 256,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+        { type: 'text', text: `Cette photo montre-t-elle de la nourriture ou une boisson — un plat, une assiette, un aliment, un repas au restaurant, une table dressée ?
+Réponds UNIQUEMENT par un de ces deux mots, sans rien d'autre : OUI ou NON.
+OUI si de la nourriture ou une boisson est le sujet de la photo, même partiellement visible.
+NON dans tous les autres cas : une personne, un animal, un paysage, une capture d'écran, un texte, un objet qui ne se mange pas.` },
+      ],
+    }],
+  };
+  const reponse = await appelerRelais(corps);
+  const data = await reponse.json();
+  const texte = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('').trim().toUpperCase();
+  // au moindre doute sur la réponse, on refuse : le silence ne vaut pas accord
+  return /^OUI/.test(texte);
+}
+
 /* ----- poser sa story : une photo, un mot ----- */
 function ouvrirPriseStory(){
   if (document.getElementById('storyPrise')) return;
@@ -10415,7 +10448,8 @@ function ouvrirPriseStory(){
       <div class="confirm-boite story-boite" role="dialog" aria-modal="true">
         <div class="confirm-titre">Ta story du jour</div>
         <div class="confirm-texte">Une photo de ton plat et un mot. Tes amis la verront
-          pendant vingt-quatre heures, sans aucun de tes chiffres.</div>
+          pendant vingt-quatre heures, sans aucun de tes chiffres. Seules les photos
+          de nourriture passent.</div>
         <input type="file" accept="image/*" id="storyFichier" hidden>
         <button class="story-cadre" id="storyChoisir">
           <span class="story-cadre-texte">Choisir une photo</span>
@@ -10455,8 +10489,15 @@ function ouvrirPriseStory(){
   publier.onclick = async () => {
     if (!photo) return;
     publier.disabled = true;
-    publier.textContent = 'Envoi…';
+    publier.textContent = 'Vérification…';
     try {
+      if (!await estUnPlat(photo)){
+        publier.disabled = false;
+        publier.textContent = 'Publier';
+        showToast('Les stories ne montrent que des plats');
+        return;
+      }
+      publier.textContent = 'Envoi…';
       await social.poserStory(photo, document.getElementById('storyMot').value);
       fermer();
       showToast('Story publiée');
@@ -10700,7 +10741,7 @@ function renderReglages(){
 const PHOTO_MODELE = 'claude-sonnet-4-6';
 // En ligne, la clé de l'IA ne doit jamais apparaître dans la page : on passe
 // par une petite fonction Netlify qui la garde côté serveur.
-const PHOTO_RELAIS = '/.netlify/functions/brio-photo';
+const PHOTO_RELAIS = '/functions/v1/brio-photo';   // fonction Supabase Edge, voir supabase/functions/
 const PHOTO_ETAPES = ['Repérage des aliments…', 'Estimation des portions…', 'Calcul des calories…', 'Derniers ajustements…'];
 
 let photoRepas = null;
@@ -11021,6 +11062,27 @@ async function lancerAnalysePhoto(fichier){
   }
 }
 
+/* Un seul chemin vers le modèle. En ligne il passe par la fonction Supabase,
+   qui garde la clé d'API hors du navigateur et n'accepte qu'un utilisateur
+   connecté ; dans un aperçu Claude, l'appel est direct. */
+async function appelerRelais(corps){
+  let reponse;
+  try {
+    reponse = window.__brioEnLigne
+      ? await nuage.api(PHOTO_RELAIS, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) })
+      : await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+  } catch(e){
+    throw erreurLisible('Pas de connexion : l\u2019analyse de la photo a besoin d\u2019internet.');
+  }
+  if (window.__brioEnLigne && reponse.status === 404){
+    throw erreurLisible('Le relais d\u2019analyse photo n\u2019est pas déployé (fonction Supabase « brio-photo » introuvable).');
+  }
+  if (!reponse.ok) throw erreurLisible(`Brioche n\u2019a pas pu analyser la photo (erreur ${reponse.status}). Réessaie dans un instant.`);
+  return reponse;
+}
+
 async function analyserPhoto(base64){
   const objectif = state.macroGoals && state.macroGoals.calories;
   const consigne = `Tu es Brioche, l'assistant nutrition de l'app BRIO. Analyse cette photo de repas.
@@ -11046,18 +11108,7 @@ Règles :
     }],
   };
 
-  const adresse = window.__brioEnLigne ? PHOTO_RELAIS : 'https://api.anthropic.com/v1/messages';
-  let reponse;
-  try {
-    reponse = await fetch(adresse, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
-  } catch(e){
-    throw erreurLisible('Pas de connexion : l\u2019analyse de la photo a besoin d\u2019internet.');
-  }
-  if (window.__brioEnLigne && reponse.status === 404){
-    throw erreurLisible('L\u2019analyse photo n\u2019est pas encore branchée sur la version en ligne de BRIO (fonction Netlify « brio-photo » introuvable).');
-  }
-  if (!reponse.ok) throw erreurLisible(`Brioche n\u2019a pas pu analyser la photo (erreur ${reponse.status}). Réessaie dans un instant.`);
-
+  const reponse = await appelerRelais(corps);
   const data = await reponse.json();
   const texte = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('');
   const propre = texte.replace(/```json|```/g, '').trim();
