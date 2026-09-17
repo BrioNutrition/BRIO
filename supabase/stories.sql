@@ -184,6 +184,21 @@ begin
 end $$;
 
 -- À programmer une fois, dans Supabase (extension pg_cron activée) :
---   select cron.schedule('menage-stories', '17 * * * *', $$select public.menage_stories()$$);
+--   select cron.schedule('menage-stories', '17 * * * *', 'select public.menage_stories()');
 -- Toutes les heures à la minute 17 plutôt qu'à l'heure pile : les tâches
 -- planifiées se bousculent toutes à zéro.
+
+-- ------------------------------------------------------------- contrôle --
+-- Dernière ligne du fichier, volontairement : si elle ne s'affiche pas, c'est
+-- que le collage a été tronqué en route et que tout n'a pas été exécuté.
+-- Attendu : « stories : 4 tables, 17 règles ».
+select 'stories : '
+  || (select count(*) from pg_tables
+        where schemaname = 'public'
+          and tablename in ('profils','amities','stories','reactions'))
+  || ' tables, '
+  || (select count(*) from pg_policies
+        where (schemaname = 'public'
+               and tablename in ('profils','amities','stories','reactions'))
+           or schemaname = 'storage')
+  || ' règles' as controle;
