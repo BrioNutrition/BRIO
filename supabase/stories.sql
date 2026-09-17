@@ -188,10 +188,29 @@ end $$;
 -- Toutes les heures à la minute 17 plutôt qu'à l'heure pile : les tâches
 -- planifiées se bousculent toutes à zéro.
 
+-- ---------------------------------------------------------- temps réel --
+-- Sans cette publication, Supabase n'envoie rien : l'app ne saurait qu'une
+-- story est arrivée qu'en redemandant. Les règles d'accès s'appliquent aussi
+-- au temps réel — on ne reçoit que ce qu'on a le droit de lire.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    begin alter publication supabase_realtime add table public.stories;   exception when duplicate_object then null; end;
+    begin alter publication supabase_realtime add table public.amities;   exception when duplicate_object then null; end;
+    begin alter publication supabase_realtime add table public.reactions; exception when duplicate_object then null; end;
+  end if;
+end $$;
+
+-- Sans « replica identity full », une suppression n'annonce que la clé ; avec,
+-- l'app sait quelle story a disparu.
+alter table public.stories   replica identity full;
+alter table public.amities   replica identity full;
+alter table public.reactions replica identity full;
+
 -- ------------------------------------------------------------- contrôle --
 -- Dernière ligne du fichier, volontairement : si elle ne s'affiche pas, c'est
 -- que le collage a été tronqué en route et que tout n'a pas été exécuté.
--- Attendu : « stories : 4 tables, 17 règles ».
+-- Attendu : « stories : 4 tables, 17 règles, 3 en temps réel ».
 select 'stories : '
   || (select count(*) from pg_tables
         where schemaname = 'public'
@@ -201,4 +220,8 @@ select 'stories : '
         where (schemaname = 'public'
                and tablename in ('profils','amities','stories','reactions'))
            or schemaname = 'storage')
-  || ' règles' as controle;
+  || ' règles, '
+  || (select count(*) from pg_publication_tables
+        where pubname = 'supabase_realtime'
+          and tablename in ('stories','amities','reactions'))
+  || ' en temps réel' as controle;

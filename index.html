@@ -426,6 +426,8 @@ const nuage = (function(){
     // requête rejouée une fois s'il venait d'expirer
     api: donnees,
     cle: () => NUAGE_CLE,
+    urlBase: () => NUAGE_URL,
+    jeton: () => (session && session.access_token) || null,
     uid: () => (session && session.uid) || null,
     email: () => (session && session.email) || null,
     compteLocal: () => lireJSON('brio:compte-dernier', null),
@@ -4684,6 +4686,9 @@ const LIGHT_SCREENS = [...MAIN_SCREENS, 'onboarding', 'welcome', 'gouts', 'intro
 function render(){
   if (state.screen !== 'progres') feuillesDejaOuvertes = { poids:false, detail:false, historique:false };
   majEtatPoints();
+  // hors des écrans sociaux, on ferme la connexion : pas de websocket ouvert
+  // en permanence pour rien
+  if (state.screen !== 'stories' && state.screen !== 'amis') tempsReel.arreter();
   app.classList.toggle('repas-theme', LIGHT_SCREENS.includes(state.screen));
   app.classList.toggle('with-nav', MAIN_SCREENS.includes(state.screen));
 
@@ -9903,6 +9908,115 @@ function renderRecompenses(){
   };
 }
 
+/* ---------------- temps réel ----------------
+   Supabase pousse les changements par websocket plutôt que de les faire
+   attendre. Le protocole est celui de Phoenix : on rejoint un sujet, on
+   entretient un battement de cœur, et le serveur envoie « postgres_changes »
+   à chaque écriture qui nous concerne — les règles d'accès s'appliquent, on ne
+   reçoit donc que ce qu'on a le droit de voir.
+
+   Un repli par sondage double le dispositif. Il ne coûte presque rien et rend
+   la fraîcheur indépendante du websocket : si la connexion est refusée, si le
+   réseau la coupe, ou si le protocole évolue, l'écran continue de se mettre à
+   jour — un peu moins vite, c'est tout. */
+const tempsReel = (function(){
+  const SONDAGE_MS = 20000;
+  let socle = null, battement = null, sondage = null;
+  let ref = 0, rejoint = false, essais = 0, rappel = null, minuteur = null;
+
+  const dispo = () => nuage.actif() && nuage.connecte() && typeof WebSocket !== 'undefined';
+
+  // Plusieurs écritures arrivent souvent d'un coup : on ne recharge qu'une fois.
+  function declencher(){
+    if (!rappel) return;
+    clearTimeout(minuteur);
+    minuteur = setTimeout(() => { try { rappel(); } catch(e){} }, 250);
+  }
+
+  function envoyer(topic, event, payload){
+    if (!socle || socle.readyState !== 1) return;
+    try { socle.send(JSON.stringify({ topic, event, payload, ref: String(++ref) })); } catch(e){}
+  }
+
+  function ouvrir(){
+    if (!dispo() || socle) return;
+    let url;
+    try {
+      url = nuage.urlBase().replace(/^http/, 'ws')
+        + '/realtime/v1/websocket?apikey=' + encodeURIComponent(nuage.cle()) + '&vsn=1.0.0';
+      socle = new WebSocket(url);
+    } catch(e){ socle = null; return demarrerSondage(); }
+
+    socle.onopen = () => {
+      essais = 0;
+      envoyer('realtime:brio', 'phx_join', {
+        config: {
+          broadcast: { self: false },
+          postgres_changes: [
+            { event: '*', schema: 'public', table: 'stories' },
+            { event: '*', schema: 'public', table: 'amities' },
+            { event: '*', schema: 'public', table: 'reactions' },
+          ],
+        },
+        access_token: nuage.jeton(),
+      });
+      clearInterval(battement);
+      battement = setInterval(() => envoyer('phoenix', 'heartbeat', {}), 30000);
+      // si le sujet n'est pas rejoint à temps, le sondage prend le relais
+      setTimeout(() => { if (!rejoint) demarrerSondage(); }, 6000);
+    };
+
+    socle.onmessage = (ev) => {
+      let m; try { m = JSON.parse(ev.data); } catch(e){ return; }
+      if (m.event === 'phx_reply' && m.payload && m.payload.status === 'ok'){
+        rejoint = true;
+        arreterSondage();   // le temps réel suffit
+      }
+      if (m.event === 'postgres_changes') declencher();
+    };
+
+    socle.onclose = () => { nettoyerSocle(); if (rappel) reconnecter(); };
+    socle.onerror = () => { try { socle.close(); } catch(e){} };
+  }
+
+  function reconnecter(){
+    demarrerSondage();                       // on ne reste jamais sans filet
+    const attente = Math.min(30000, 1000 * Math.pow(2, essais++));
+    setTimeout(() => { if (rappel) ouvrir(); }, attente);
+  }
+
+  function nettoyerSocle(){
+    clearInterval(battement); battement = null;
+    rejoint = false;
+    socle = null;
+  }
+
+  const demarrerSondage = () => { if (!sondage && rappel) sondage = setInterval(declencher, SONDAGE_MS); };
+  const arreterSondage  = () => { clearInterval(sondage); sondage = null; };
+
+  // Revenir sur l'app après l'avoir quittée : on rafraîchit sans attendre.
+  const surReveil = () => { if (rappel && !document.hidden) declencher(); };
+  document.addEventListener('visibilitychange', surReveil);
+  window.addEventListener('focus', surReveil);
+  window.addEventListener('online', () => { if (rappel){ arreterSondage(); ouvrir(); declencher(); } });
+
+  return {
+    suivre(cb){
+      rappel = cb;
+      if (!dispo()) return;
+      if (!socle) ouvrir();
+      demarrerSondage();
+    },
+    arreter(){
+      rappel = null;
+      clearTimeout(minuteur);
+      arreterSondage();
+      if (socle){ try { socle.close(); } catch(e){} }
+      nettoyerSocle();
+    },
+  };
+})();
+
 /* ---------------- écrans Stories et Amis ---------------- */
 
 // Une pastille ronde avec la photo de profil, ou l'initiale à défaut.
@@ -9916,31 +10030,49 @@ function pastilleProfil(profil, classe){
 const amiAutre = (a) => (a.petit === social.monId() ? a.grand : a.petit);
 
 // Charge ce qu'il faut pour les deux écrans.
-async function chargerSocial(){
-  state.social = { chargement: true };
-  render();
+/* « discret » : on recharge sans afficher « Chargement… » et sans redessiner
+   si rien n'a bougé. C'est ce qui permet au temps réel de rafraîchir en
+   continu sans faire clignoter l'écran ni interrompre ce qu'on regarde. */
+async function chargerSocial(discret){
+  if (!discret){ state.social = { chargement: true }; render(); }
   try {
     const [profil, amities] = await Promise.all([social.monProfil(), social.mesAmities()]);
     const profils = await social.profilsDe(amities.map(amiAutre));
-    state.social = { chargement: false, profil, amities, profils };
+    const neuf = { chargement: false, profil, amities, profils };
+    if (discret && memeSocial(state.social, neuf)) return;
+    state.social = neuf;
   } catch(e){
+    if (discret) return;
     state.social = { chargement: false, erreur: messageHumain(e) };
   }
   render();
 }
 
-async function chargerStories(){
-  state.stories = { chargement: true };
-  render();
+async function chargerStories(discret){
+  if (!discret){ state.stories = { chargement: true }; render(); }
   try {
     const liste = await social.stories();
     const profils = await social.profilsDe(liste.map(x => x.auteur));
-    state.stories = { chargement: false, liste, profils };
+    const neuf = { chargement: false, liste, profils };
+    if (discret && memeStories(state.stories, neuf)) return;
+    state.stories = neuf;
   } catch(e){
+    if (discret) return;
     state.stories = { chargement: false, erreur: messageHumain(e) };
   }
   render();
 }
+
+// Comparaisons volontairement grossières : elles servent à éviter un redessin
+// inutile, pas à décrire l'état. Une empreinte suffit.
+const empreinteAmities = (a) => (a || []).map(x => x.petit + x.grand + x.etat).sort().join('|');
+const empreinteStories = (l) => (l || []).map(x =>
+  x.id + ':' + (x.reactions || []).map(r => r.auteur + r.emoji).sort().join(',')).sort().join('|');
+const memeSocial = (a, b) => !!a && !a.erreur
+  && ((a.profil && a.profil.pseudo) || '') === ((b.profil && b.profil.pseudo) || '')
+  && empreinteAmities(a.amities) === empreinteAmities(b.amities);
+const memeStories = (a, b) => !!a && !a.erreur
+  && empreinteStories(a.liste) === empreinteStories(b.liste);
 
 function renderStories(){
   // Les stories vivent en ligne : sans compte, il n'y a rien à montrer, et
@@ -10025,6 +10157,18 @@ function renderStories(){
   // on charge après le rendu, pour que l'écran s'affiche tout de suite
   if (!state.social) setTimeout(chargerSocial, 0);
   else if (!s.chargement && !s.erreur && s.profil && !state.stories) setTimeout(chargerStories, 0);
+
+  suivreLeSocial();
+}
+
+/* Un ami ajouté, une story publiée, une réaction posée : l'écran se met à jour
+   tout seul, sans que personne ne rafraîchisse quoi que ce soit. */
+function suivreLeSocial(){
+  tempsReel.suivre(() => {
+    if (state.screen !== 'stories' && state.screen !== 'amis') return;
+    chargerSocial(true);
+    if (state.social && state.social.profil) chargerStories(true);
+  });
 }
 
 function renderAmis(){
@@ -10121,9 +10265,10 @@ function renderAmis(){
 
   bindBottomNav('stories');
   document.getElementById('amisBack').onclick = retour;
+  suivreLeSocial();
 
   const agir = async (faire) => {
-    try { await faire(); await chargerSocial(); }
+    try { await faire(); await chargerSocial(true); render(); }
     catch(e){ showToast(messageHumain(e)); }
   };
 
