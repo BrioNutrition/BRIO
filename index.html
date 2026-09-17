@@ -569,7 +569,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     padding:28px 20px 60px;
     position:relative;
   }
-  #app.with-nav{padding-bottom:120px;}
+  #app.with-nav{padding-bottom:175px;}
   .screen-content{perspective:900px;}
   .screen-fade{animation:screenFadeIn .18s ease;}
   @keyframes screenFadeIn{
@@ -1305,12 +1305,12 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .repas-theme .meal-total-macro{color:#8A82A0;}
   .repas-theme .meal-sub{color:#8A82A0;}
   .meal-add{
-    width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gold);
-    background:transparent;color:var(--gold);font-size:18px;font-weight:700;
+    width:30px;height:30px;border:none;border-radius:50%;
+    background:transparent;color:var(--gold);font-size:26px;font-weight:400;
     display:flex;align-items:center;justify-content:center;flex-shrink:0;
     line-height:1;padding:0;text-align:center;
   }
-  .repas-theme .meal-add{border-color:#7B4FE0;color:#7B4FE0;}
+  .repas-theme .meal-add{color:#7B4FE0;}
   .meal-entry{
     display:flex;justify-content:space-between;align-items:center;gap:10px;
     font-size:13.5px;padding:0 12px 10px 50px;color:var(--ink);
@@ -2652,7 +2652,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
 
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
-  #app.with-nav{padding-bottom:calc(120px + env(safe-area-inset-bottom));}
+  #app.with-nav{padding-bottom:calc(175px + env(safe-area-inset-bottom));}   /* la barre, plus le bouton qui flotte au-dessus */
   .bottom-nav{bottom:calc(18px + env(safe-area-inset-bottom));}
   .toast{bottom:calc(26px + env(safe-area-inset-bottom));}
   .weight-sheet{padding-bottom:calc(32px + env(safe-area-inset-bottom));}
@@ -2661,13 +2661,18 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
 
   /* ---------- bouton + de la barre : photo du repas ---------- */
   .nav-pill-slider{width:calc((100% - 20px) / 5);}
-  .nav-item, .nav-plus{flex:1 1 0;min-width:0;}
+  .nav-item{flex:1 1 0;min-width:0;}
+  /* Posé hors de la barre, contre son bord droit : la barre est centrée et
+     plafonnée à 420 px, d'où le calcul plutôt qu'une marge fixe. */
   .nav-plus{
-    position:relative;z-index:1;flex:1;
+    position:fixed;z-index:61;
+    right:max(16px, calc((100% - 420px) / 2));
+    bottom:calc(113px + env(safe-area-inset-bottom));   /* 18 sous la barre + 83 de barre + 12 d'écart */
     background:none;border:none;padding:0;
     display:flex;align-items:center;justify-content:center;
     -webkit-tap-highlight-color:transparent;
   }
+  .nav-plus-signe{font-size:30px;font-weight:300;line-height:1;margin-top:-2px;}
   /* bouton + : violet des bulles de date, bordure des cases du tableau de bord */
   /* effet verre « ménisque » : une surface de liquide clair dans la bille violette */
   .nav-plus-rond{
@@ -3077,8 +3082,8 @@ html.sombre .meal-sub{color:var(--muted)}
 html.sombre .meal-total-kcal{color:#A98DF0}
 html.sombre .repas-theme .meal-total-macro{color:#AAA5B7}
 html.sombre .repas-theme .meal-sub{color:#AAA5B7}
-html.sombre .meal-add{border:1.5px solid var(--gold);background:transparent;color:var(--gold)}
-html.sombre .repas-theme .meal-add{border-color:#7B4FE0;color:#A98DF0}
+html.sombre .meal-add{border:none;background:transparent;color:var(--gold)}
+html.sombre .repas-theme .meal-add{color:#A98DF0}
 html.sombre .meal-entry{color:var(--ink)}
 html.sombre .repas-theme .meal-entry{color:#EDECF4}
 html.sombre .meal-entry-cal{color:var(--muted)}
@@ -3830,10 +3835,6 @@ function consumeDayFlipClass(){
   return c;
 }
 
-// Le bouton + (photo du repas) se glisse au milieu, entre Progrès et Recettes :
-// la barre compte 5 places, et la pastille saute la place du milieu.
-const NAV_PLUS_PLACE = 3;
-const navPlace = i => i >= NAV_PLUS_PLACE ? i + 1 : i;
 
 function bottomNavHtml(activeId){
   const activeIndex = NAV_ITEMS.findIndex(i=>i.id===activeId);
@@ -3844,13 +3845,15 @@ function bottomNavHtml(activeId){
       <span class="nav-label">${item.label}</span>
     </button>`;
   });
-  boutons.splice(NAV_PLUS_PLACE, 0, `<button class="nav-plus" id="navPlus" aria-label="Prendre mon repas en photo">
-      <span class="nav-plus-rond">${ICONS.navPhoto}</span>
-    </button>`);
+  // Le bouton d'ajout ne prend plus une place dans la barre : il flotte
+  // au-dessus, à droite, aligné sur son bord. Stories occupe donc le milieu.
   return `<div class="bottom-nav">
-    <div class="nav-pill-slider" id="navSlider" style="transform:translateX(${navPlace(activeIndex)*100}%)"></div>
+    <div class="nav-pill-slider" id="navSlider" style="transform:translateX(${activeIndex*100}%)"></div>
     ${boutons.join('')}
-  </div>`;
+  </div>
+  <button class="nav-plus" id="navPlus" aria-label="Ajouter un repas en photo">
+    <span class="nav-plus-rond"><span class="nav-plus-signe">+</span></span>
+  </button>`;
 }
 
 // Place la pastille exactement sous l'onglet actif, au pixel près (même largeur,
@@ -3873,7 +3876,7 @@ window.addEventListener('resize', () => {
 
 function bindBottomNav(activeId){
   const slider = document.getElementById('navSlider');
-  const activeIndex = navPlace(NAV_ITEMS.findIndex(i=>i.id===activeId));
+  const activeIndex = NAV_ITEMS.findIndex(i=>i.id===activeId);
   const actif = app.querySelector('.nav-item.active');
   if (slider && actif){
     const cible = placerPastille(slider, actif);
