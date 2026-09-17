@@ -2563,6 +2563,17 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .ami-btn.discret{background:rgba(123,79,224,.12);color:#6B3FC4;}
   .ami-btn:active{transform:scale(.95);}
   .ami-attente{font-size:12px;font-weight:700;color:#8A82A0;}
+  .ami-saisie{display:flex;gap:8px;margin-top:10px;}
+  .ami-saisie input{
+    flex:1;min-width:0;border:1px solid #DCC6F2;border-radius:12px;padding:10px 12px;
+    font-family:inherit;font-size:14px;background:rgba(255,255,255,.75);color:#1C1730;
+  }
+  .ami-saisie input:focus{outline:none;border-color:#7B4FE0;}
+  .ami-valider{
+    border:none;border-radius:12px;padding:10px 16px;background:#7B4FE0;color:#fff;
+    font-family:inherit;font-size:14px;font-weight:700;flex-shrink:0;
+  }
+  .ami-valider:active{transform:scale(.96);}
 
   /* ---------- la visionneuse ---------- */
   .story-vue{
@@ -3606,6 +3617,7 @@ html.sombre .ami-ligne{border-bottom-color:rgba(255,255,255,.08)}
 html.sombre .ami-nom{color:#EDECF4}
 html.sombre .ami-btn.discret{background:rgba(169,141,240,.18);color:#A58ADB}
 html.sombre .ami-attente{color:#AAA5B7}
+html.sombre .ami-saisie input{border-color:rgba(255,255,255,.14);background:rgba(46,37,72,.76);color:#EDECF4}
 html.sombre .story-plus{background:rgba(46,37,72,.85);color:#A98DF0}
 html.sombre .story-anneau.ajout .story-cercle{background:rgba(169,141,240,.22)}
 html.sombre .story-cadre{border-color:rgba(169,141,240,.45);background:rgba(169,141,240,.08)}
@@ -10045,10 +10057,10 @@ function renderAmis(){
           <p class="rec-joker-txt">${s.profil
             ? `Tes amis te trouvent sous <b>${esc(s.profil.pseudo)}</b>.`
             : 'Choisis un pseudo pour être trouvable.'}</p>
-          <div class="water-custom-row">
+          <div class="ami-saisie">
             <input type="text" id="amiPseudo" maxlength="20" placeholder="3 à 20 caractères"
               value="${s.profil ? esc(s.profil.pseudo) : ''}">
-            <button class="water-custom-add" id="amiPseudoOk">${s.profil ? 'Changer' : 'Choisir'}</button>
+            <button class="ami-valider" id="amiPseudoOk">${s.profil ? 'Changer' : 'Choisir'}</button>
           </div>
         </div>
       </div>
@@ -10056,9 +10068,9 @@ function renderAmis(){
       <div class="rg-section">
         <div class="rg-section-titre">Ajouter quelqu’un</div>
         <div class="recap-card rec-joker">
-          <div class="water-custom-row">
+          <div class="ami-saisie">
             <input type="text" id="amiRech" placeholder="Chercher un pseudo" value="${esc(rech.texte)}">
-            <button class="water-custom-add" id="amiRechOk">Chercher</button>
+            <button class="ami-valider" id="amiRechOk">Chercher</button>
           </div>
           ${rech.encours ? `<p class="rec-joker-txt">Recherche…</p>` : ''}
           ${nouveaux.map(r => `<div class="ami-ligne">${pastilleProfil(r)}
