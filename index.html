@@ -547,6 +547,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     --gold:#FFD800;
     --gold-soft:#F3E9D2;
     --radius-lg: 22px;
+    --barre-h: 62px;          /* hauteur de la barre du bas : tout s'y réfère */
     --radius-md: 16px;
     --radius-sm: 10px;
   }
@@ -569,7 +570,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     padding:28px 20px 60px;
     position:relative;
   }
-  #app.with-nav{padding-bottom:175px;}
+  #app.with-nav{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px);}
   .screen-content{perspective:900px;}
   .screen-fade{animation:screenFadeIn .18s ease;}
   @keyframes screenFadeIn{
@@ -1378,22 +1379,32 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .repas-theme .field-ref{color:#8A82A0;}
 
   /* ---------- barre de navigation ---------- */
+  /* Hauteur fixe, volontairement : le bouton qui flotte au-dessus et la réserve
+     de défilement des écrans se calculent à partir d'elle. Sans elle, le
+     moindre changement de police décalait tout, en silence. */
   .bottom-nav{
     position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-    width:calc(100% - 32px);max-width:420px;
-    background:rgba(255,255,255,.45);
-    backdrop-filter:blur(22px) saturate(180%);
-    -webkit-backdrop-filter:blur(22px) saturate(180%);
-    border:1.5px solid rgba(255,255,255,.85);
+    width:calc(100% - 32px);max-width:420px;height:var(--barre-h);
+    /* verre liquide : un dégradé en diagonale plutôt qu'un aplat, une arête
+       claire en haut et un retour de lumière en bas */
+    background:linear-gradient(152deg,
+      rgba(255,255,255,.62) 0%, rgba(255,255,255,.34) 52%, rgba(255,255,255,.52) 100%);
+    backdrop-filter:blur(30px) saturate(200%);
+    -webkit-backdrop-filter:blur(30px) saturate(200%);
+    border:1px solid rgba(255,255,255,.7);
     border-radius:999px;
     display:flex;align-items:center;justify-content:space-between;
-    padding:10px;box-shadow:0 10px 28px rgba(81,33,214,.18);
+    padding:0 8px;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 -1px 0 rgba(255,255,255,.42),
+      0 12px 30px -10px rgba(81,33,214,.3);
     z-index:60;overflow:hidden;
   }
   .nav-pill-slider{
-    position:absolute;top:10px;bottom:10px;left:10px;
-    width:calc((100% - 20px) / 5);
-    background:#DCD5EC;border-radius:999px;
+    position:absolute;top:7px;bottom:7px;left:8px;
+    width:calc((100% - 16px) / 5);
+    background:rgba(123,79,224,.14);border-radius:999px;
     transition:transform .4s cubic-bezier(.34,1.56,.64,1);
     z-index:0;
   }
@@ -1401,17 +1412,17 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     position:relative;z-index:1;
     background:none;border:none;flex:1;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:4px;padding:10px 2px;
+    gap:3px;padding:0 2px;
   }
   .nav-icon{display:flex;align-items:center;justify-content:center;}
-  .nav-icon svg{width:24px;height:24px;color:#B9AEDD;transition:color .25s;}
+  .nav-icon svg{width:21px;height:21px;color:#B9AEDD;transition:color .25s;}
   .nav-item.active .nav-icon svg{color:#7B4FE0;}
-  .nav-label{font-size:10.5px;font-weight:700;color:#B9AEDD;transition:color .25s;}
+  .nav-label{font-size:10px;font-weight:700;color:#B9AEDD;transition:color .25s;}
   /* cinq onglets plus le bouton photo : sur un écran étroit, les libellés se
      chevauchaient. Ils rapetissent au lieu de se marcher dessus. */
   @media (max-width:370px){
-    .nav-label{font-size:9.5px;}
-    .nav-icon svg{width:22px;height:22px;}
+    .nav-label{font-size:9px;}
+    .nav-icon svg{width:20px;height:20px;}
   }
   .nav-item.active .nav-label{font-weight:800;color:#7B4FE0;}
 
@@ -2652,7 +2663,8 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
 
   /* ---------- app installée : zones sûres de l'écran (encoche, barre d'accueil) ---------- */
   #app{padding-top:calc(28px + env(safe-area-inset-top));}
-  #app.with-nav{padding-bottom:calc(175px + env(safe-area-inset-bottom));}   /* la barre, plus le bouton qui flotte au-dessus */
+  /* la barre, le bouton qui flotte au-dessus, et de quoi respirer */
+  #app.with-nav{padding-bottom:calc(30px + var(--barre-h) + 12px + 62px + env(safe-area-inset-bottom));}
   .bottom-nav{bottom:calc(18px + env(safe-area-inset-bottom));}
   .toast{bottom:calc(26px + env(safe-area-inset-bottom));}
   .weight-sheet{padding-bottom:calc(32px + env(safe-area-inset-bottom));}
@@ -2667,7 +2679,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
   .nav-plus{
     position:fixed;z-index:61;
     right:max(16px, calc((100% - 420px) / 2));
-    bottom:calc(113px + env(safe-area-inset-bottom));   /* 18 sous la barre + 83 de barre + 12 d'écart */
+    bottom:calc(18px + var(--barre-h) + 12px + env(safe-area-inset-bottom));
     background:none;border:none;padding:0;
     display:flex;align-items:center;justify-content:center;
     -webkit-tap-highlight-color:transparent;
@@ -3111,8 +3123,8 @@ html.sombre .portion-chip{border:1px solid rgba(255,255,255,0.045);background:rg
 html.sombre .repas-theme .portion-chip{border-color:#47335B;background:#2E2548;color:#EDECF4}
 html.sombre .field-ref{color:var(--muted)}
 html.sombre .repas-theme .field-ref{color:#AAA5B7}
-html.sombre .bottom-nav{background:rgba(46,37,72,0.595);border:1.5px solid rgba(255,255,255,0.136);box-shadow:0 10px 28px rgba(0,0,0,0.234)}
-html.sombre .nav-pill-slider{background:#211934}
+html.sombre .bottom-nav{background:linear-gradient(152deg,rgba(255,255,255,.115) 0%,rgba(255,255,255,.04) 52%,rgba(255,255,255,.085) 100%);border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(255,255,255,.06),0 12px 30px -10px rgba(0,0,0,.5)}
+html.sombre .nav-pill-slider{background:rgba(169,141,240,.2)}
 html.sombre .nav-item{background:none;border:none}
 html.sombre .nav-icon svg{color:#B9AEDD}
 html.sombre .nav-item.active .nav-icon svg{color:#A98DF0}
