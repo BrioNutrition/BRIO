@@ -2597,7 +2597,7 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     display:flex;flex-direction:column;align-items:center;
     animation:fondApparait .2s ease;
     /* on la fait glisser au doigt : le navigateur ne doit pas prendre le geste */
-    touch-action:none;will-change:transform;
+    touch-action:none;will-change:transform;user-select:none;-webkit-user-select:none;
     transition:opacity .2s ease,transform .28s cubic-bezier(.2,.9,.3,1);
   }
   .story-vue.glisse{transition:none;}
@@ -2621,7 +2621,12 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     flex:1;width:100%;display:flex;align-items:center;justify-content:center;
     overflow:hidden;min-height:0;
   }
-  .story-image img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
+  /* le navigateur veut emporter l'image dans un glisser-déposer natif, ce qui
+     coupe net le geste de fermeture : on la rend inerte au pointeur */
+  .story-image img{
+    max-width:100%;max-height:100%;object-fit:contain;display:block;
+    pointer-events:none;-webkit-user-drag:none;user-select:none;
+  }
   .story-chargement{color:rgba(255,255,255,.6);font-size:13px;font-weight:600;}
   .story-bas{
     width:100%;padding:14px 16px calc(20px + env(safe-area-inset-bottom));
@@ -2664,7 +2669,9 @@ try { appliquerTheme(window.__brioEnLigne && localStorage.getItem('brio:theme') 
     position:absolute;bottom:-56px;
     width:44px;height:44px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;font-size:23px;line-height:1;
-    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
+    /* assez sombre pour que l'emoji se détache aussi sur une photo claire */
+    background:rgba(16,11,30,.38);border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 4px 14px rgba(0,0,0,.26);
     backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
     animation:bulleFlotte var(--duree,16s) linear var(--retard,0s) infinite;
   }
